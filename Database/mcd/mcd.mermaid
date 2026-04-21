@@ -1,0 +1,154 @@
+
+erDiagram
+  USERS {
+    uuid id PK
+    string username
+    string email
+    string password_hash
+    string role
+    string language
+    boolean is_active
+    uuid created_by FK
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  SESSIONS {
+    uuid id PK
+    uuid user_id FK
+    string ip_address
+    string user_agent
+    timestamp created_at
+    timestamp last_activity_at
+    timestamp revoked_at
+  }
+
+  ACCESS_TOKENS {
+    uuid id PK
+    uuid session_id FK
+    uuid user_id FK
+    string token_hash
+    timestamp expires_at
+    timestamp created_at
+    timestamp revoked_at
+  }
+
+  REFRESH_TOKENS {
+    uuid id PK
+    uuid session_id FK
+    uuid user_id FK
+    string token_hash
+    timestamp expires_at
+    timestamp created_at
+    timestamp last_used_at
+    timestamp revoked_at
+  }
+
+  PASSWORD_RESET_TOKENS {
+    uuid id PK
+    uuid user_id FK
+    string token_hash
+    timestamp expires_at
+    timestamp used_at
+    timestamp created_at
+  }
+
+  SENSORS {
+    uuid id PK
+    string name
+    string type
+    string unit
+    string location
+    boolean is_active
+    timestamp created_at
+  }
+
+  SENSOR_READINGS {
+    uuid id PK
+    uuid sensor_id FK
+    float value
+    timestamp measured_at
+  }
+
+  SENSOR_STATUS_LOGS {
+    uuid id PK
+    uuid sensor_id FK
+    string status
+    string reason
+    timestamp logged_at
+  }
+
+  THRESHOLDS {
+    uuid id PK
+    string sensor_type
+    float min_value
+    float max_value
+    uuid set_by FK
+    timestamp updated_at
+  }
+
+  ACTUATORS {
+    uuid id PK
+    string name
+    string type
+    string status
+    timestamp last_triggered_at
+    timestamp created_at
+  }
+
+  ACTIONS {
+    uuid id PK
+    uuid actuator_id FK
+    uuid triggered_by FK
+    string action_type
+    string source
+    string notes
+    timestamp triggered_at
+  }
+
+  ALERTS {
+    uuid id PK
+    uuid sensor_id FK
+    uuid actuator_id FK
+    string type
+    string message
+    string severity
+    boolean is_acknowledged
+    uuid acknowledged_by FK
+    timestamp triggered_at
+    timestamp acknowledged_at
+  }
+
+  SCRIPT_LOGS {
+    uuid id PK
+    uuid executed_by FK
+    string command
+    string result
+    string source
+    timestamp executed_at
+  }
+
+  EXPORTS {
+    uuid id PK
+    uuid exported_by FK
+    string export_type
+    string filters
+    string file_path
+    timestamp created_at
+  }
+
+  USERS ||--o{ USERS : "creates"
+  USERS ||--o{ SESSIONS : "has"
+  SESSIONS ||--o{ ACCESS_TOKENS : "has"
+  SESSIONS ||--o{ REFRESH_TOKENS : "has"
+  USERS ||--o{ PASSWORD_RESET_TOKENS : "has"
+  USERS ||--o{ THRESHOLDS : "sets"
+  USERS ||--o{ ACTIONS : "triggers"
+  USERS ||--o{ ALERTS : "acknowledges"
+  USERS ||--o{ SCRIPT_LOGS : "executes"
+  USERS ||--o{ EXPORTS : "creates"
+  SENSORS ||--o{ SENSOR_READINGS : "produces"
+  SENSORS ||--o{ SENSOR_STATUS_LOGS : "has"
+  SENSORS ||--o{ ALERTS : "generates"
+  ACTUATORS ||--o{ ACTIONS : "receives"
+  ACTUATORS ||--o{ ALERTS : "linked to"
