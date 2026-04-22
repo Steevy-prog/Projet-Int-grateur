@@ -1,8 +1,8 @@
 import { Bell, LogOut, Globe, Sun, Moon } from 'lucide-react'
 import { useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
-import { useAlerts } from '@/hooks/useAlerts'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useAuth } from '@/hooks/index'
+import { useAlerts } from '@/hooks/index'
+import { useTranslation } from '@/hooks/index'
 import { cn } from '@/lib/utils'
 
 interface TopbarProps {

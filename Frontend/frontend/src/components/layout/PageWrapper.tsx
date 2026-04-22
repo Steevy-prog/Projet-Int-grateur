@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import Sidebar from '../../../Sidebar'
-import Topbar  from '../../../Topbar'
+import Sidebar from './Sidebar'
+import Topbar  from './Topbar'
 import { cn }  from '@/lib/utils'
 
 interface PageWrapperProps {
