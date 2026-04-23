@@ -5,7 +5,7 @@
 --   admin_user  → Admin@1234
 --   viewer_user → Viewer@1234
 -- ============================================================
-
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ------------------------------------------------------------
 -- USERS
@@ -14,26 +14,26 @@
 -- ------------------------------------------------------------
 INSERT INTO users (id, username, email, password_hash, role, language, is_active, created_by)
 VALUES
-    (
-        '11111111-1111-1111-1111-111111111111',
-        'admin_user',
-        'admin@agriculture-intelligente.cm',
-        '$2a$12$eImiTXuWVxfM37uY4JANjQ==hashed_placeholder_admin',  -- Replace with real bcrypt hash
-        'admin',
-        'fr',
-        TRUE,
-        NULL  -- First admin has no creator
-    ),
-    (
-        '22222222-2222-2222-2222-222222222222',
-        'viewer_user',
-        'viewer@agriculture-intelligente.cm',
-        '$2a$12$eImiTXuWVxfM37uY4JANjQ==hashed_placeholder_viewer',  -- Replace with real bcrypt hash
-        'viewer',
-        'en',
-        TRUE,
-        '11111111-1111-1111-1111-111111111111'
-    );
+(
+    '11111111-1111-1111-1111-111111111111',
+    'admin_user',
+    'admin@agriculture-intelligente.cm',
+    crypt('hashed_placeholder_admin', gen_salt('bf')),
+    'admin',
+    'fr',
+    TRUE,
+    NULL
+),
+(
+    '22222222-2222-2222-2222-222222222222',
+    'viewer_user',
+    'viewer@agriculture-intelligente.cm',
+    crypt('hashed_placeholder_viewer', gen_salt('bf')),
+    'viewer',
+    'en',
+    TRUE,
+    '11111111-1111-1111-1111-111111111111'
+);
 
 
 -- ------------------------------------------------------------

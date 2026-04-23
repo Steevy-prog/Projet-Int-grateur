@@ -19,12 +19,12 @@ set -e  # Stop immediately if any command fails
 # --------------------------------------------------------------
 # CONFIGURATION — edit these before running
 # --------------------------------------------------------------
-PG_SUPERUSER="postgres"
-PG_HOST="localhost"
+PG_SUPERUSER="neondb_owner"
+PG_HOST="ep-orange-union-a4qw3jix-pooler.us-east-1.aws.neon.tech"
 PG_PORT="5432"
 DB_NAME="agriculture_intelligente"
-MIGRATION_USER="agri_migration"
-MIGRATION_PASS="AgriMigration@SecurePass2025"
+MIGRATION_USER="neondb_owner"
+MIGRATION_PASS="npg_UsYKh82OMXHr"
 
 # Colors for output
 RED='\033[0;31m'
@@ -42,8 +42,10 @@ log_error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 run_as_superuser() {
     local file=$1
     log_info "Running $file as superuser ($PG_SUPERUSER)..."
-    psql -U "$PG_SUPERUSER" -h "$PG_HOST" -p "$PG_PORT" -f "$file" \
-        || log_error "Failed on $file"
+    PGPASSWORD="$MIGRATION_PASS" psql \
+      "host=$PG_HOST port=$PG_PORT dbname=$DB_NAME user=$PG_SUPERUSER sslmode=require" \
+      -f "$file" \
+      || log_error "Failed on $file"
     log_success "$file completed."
 }
 
@@ -88,7 +90,7 @@ log_success "All SQL files found."
 # --------------------------------------------------------------
 echo ""
 log_info "====== STEP 1: Creating database and roles ======"
-run_as_superuser "00_create_database.sql"
+#run_as_superuser "00_create_database.sql"
 
 # --------------------------------------------------------------
 # STEP 2 — Reset any existing objects (clean slate)
