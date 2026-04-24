@@ -1,0 +1,29 @@
+# Core
+django>=4.2,<5.0
+djangorestframework>=3.15
+
+# ASGI + WebSocket
+daphne>=4.0
+channels>=4.0
+channels-redis>=4.0
+
+# Database
+psycopg2-binary>=2.9
+
+# Auth
+djangorestframework-simplejwt>=5.3
+
+# CORS
+django-cors-headers>=4.3
+
+# Config
+python-decouple>=3.8
+
+# Rate limiting
+django-ratelimit>=4.0
+
+# Redis client
+redis>=5.0
+
+# Password hashing (bcrypt compatible with PostgreSQL crypt())
+bcrypt>=4.0
