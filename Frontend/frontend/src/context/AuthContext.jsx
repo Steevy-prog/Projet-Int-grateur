@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     
     // Redirect to login
-    navigate('/login');
+    navigate('/');
   };
 
 

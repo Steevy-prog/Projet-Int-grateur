@@ -41,22 +41,39 @@ import Control from './pages/control';
 import Admin from './pages/admin';
 // import History from './pages/history';
 
-import { useAuth } from './context/AuthContext';
+import Sidebar from './components/layout/sidebar';
+import Header from './components/layout/header';
 
+import { AuthProvider } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
 // --- MAIN APP ---
 
 export default function App() {
   return (
     <Router>
-      <Routes>
-        <Route index element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/monitoring" element={<Monitoring />} />
-        <Route path="/control" element={<Control />} />
-        {/* <Route path="/activity" element={<Activity />} /> */}
-        {/* <Route path="/history" element={<History/>} /> */}
-        <Route path="/admin" element={<Admin />} />
-      </Routes>
+      <AuthProvider>  
+        <AppProvider>
+          <Routes>
+            <Route index element={<Login />} />
+          </Routes>
+          <div className="flex min-h-screen bg-slate-50 text-slate-900 antialiased font-sans">
+            <Sidebar />
+            <main className="flex-1 flex flex-col min-w-0">
+              <Header />
+              <div className="p-8 max-w-7xl w-full mx-auto">
+                <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/monitoring" element={<Monitoring />} />
+                  <Route path="/control" element={<Control />} />
+                  {/* <Route path="/activity" element={<Activity />} /> */}
+                  {/* <Route path="/history" element={<History/>} /> */}
+                  <Route path="/admin" element={<Admin />} />
+                </Routes>
+              </div>  
+            </main>
+          </div>
+        </AppProvider>  
+      </AuthProvider>
     </Router>
   );
 }

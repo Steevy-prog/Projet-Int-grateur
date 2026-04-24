@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { 
   LayoutDashboard, 
   Activity, 
@@ -20,6 +20,16 @@ import {
   Clock
 } from 'lucide-react';
 
+import { useApp } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+
+
+const handleSidebarItemClick = (page, setCurrentPage, navigate) => {
+  console.log('Navigating to:', page);
+  setCurrentPage(page);
+  navigate(`/${page}`);
+}
 const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
   <button
     onClick={onClick}
@@ -35,8 +45,10 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
 );
 
 export default function Sidebar() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  
+  const navigate = useNavigate();
+
+  const { currentPage, setCurrentPage } = useApp();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="w-64 border-r border-slate-200 bg-white sticky top-0 h-screen hidden md:flex flex-col p-4">
@@ -53,46 +65,51 @@ export default function Sidebar() {
             icon={LayoutDashboard} 
             label="Tableau de bord" 
             active={currentPage === 'dashboard'} 
-            onClick={() => setCurrentPage('dashboard')}
+            onClick={() => handleSidebarItemClick('dashboard', setCurrentPage, navigate)}
           />
           <SidebarItem 
             icon={Activity} 
             label="Surveillance" 
             active={currentPage === 'monitoring'} 
-            onClick={() => setCurrentPage('monitoring')}
+            onClick={() => handleSidebarItemClick('monitoring', setCurrentPage, navigate)}
           />
           <SidebarItem 
             icon={Settings2} 
             label="Contrôle & Seuils" 
             active={currentPage === 'control'} 
-            onClick={() => setCurrentPage('control')}
+            onClick={() => handleSidebarItemClick('control', setCurrentPage, navigate)}
           />
           <SidebarItem 
             icon={Bell} 
             label="Historique Alertes" 
             active={currentPage === 'alerts'} 
-            onClick={() => setCurrentPage('alerts')}
+            onClick={() => handleSidebarItemClick('alerts', setCurrentPage, navigate)}
           />
           
-          <div className="mt-8">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Système</p>
-            <SidebarItem 
-              icon={Users} 
-              label="Utilisateurs" 
-              active={currentPage === 'admin'} 
-              onClick={() => setCurrentPage('admin')}
-            />
-            <SidebarItem 
-              icon={Terminal} 
-              label="Logs Script" 
-              active={currentPage === 'logs'} 
-              onClick={() => setCurrentPage('logs')}
-            />
-          </div>
+          {user?.role === 'admin' && 
+            <div className="mt-8">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Système</p>
+            
+              <SidebarItem 
+                icon={Users} 
+                label="Utilisateurs" 
+                active={currentPage === 'admin'} 
+                onClick={() => handleSidebarItemClick('admin', setCurrentPage, navigate)}
+              />
+            
+              <SidebarItem 
+                icon={Terminal} 
+                label="Logs Script" 
+                active={currentPage === 'logs'} 
+                onClick={() => handleSidebarItemClick('logs', setCurrentPage, navigate)}
+              />
+              
+            </div>
+          }
         </nav>
 
         <button 
-          onClick={() => setIsLoggedIn(false)}
+          onClick={logout}
           className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-600 transition-colors mt-auto border-t border-slate-100"
         >
           <LogOut size={20} />

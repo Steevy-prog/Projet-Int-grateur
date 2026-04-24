@@ -39,7 +39,7 @@ const Admin = () => {
     useEffect(() => {
       if (!user) {
         navigate('/');
-      }else if (user?.role !== 'Admin') {
+      }else if (user?.role !== 'admin') {
         navigate('/dashboard');
       }
     }, [user]);

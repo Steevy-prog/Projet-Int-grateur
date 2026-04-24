@@ -9,8 +9,11 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  // const { user } = useAuth();
-  const user = null;
+  const { user, login } = useAuth();
+  // const user = null;
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
 
   useEffect(() => {
     if (user) {
@@ -19,7 +22,7 @@ export default function Login() {
   }, [user]);
 
   const handleLogin = () => {
-
+    login(email, password)
   }
 
   return (
@@ -36,11 +39,25 @@ export default function Login() {
         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Email / Identifiant</label>
-            <input type="text" required placeholder="admin_jean" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm" />
+            <input 
+              type="text" 
+              required 
+              placeholder="admin_jean" 
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Mot de passe</label>
-            <input type="password" required placeholder="••••••••" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm" />
+            <input 
+              type="password" 
+              required 
+              placeholder="••••••••" 
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
           <div className="flex items-center gap-2">
             <input type="checkbox" id="remember" className="rounded text-emerald-600 border-slate-300" />
