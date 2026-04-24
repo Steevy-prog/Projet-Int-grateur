@@ -1,140 +1,82 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { login as apiLogin, logout as apiLogout, tryRefresh } from '../services/auth';
+import { clearToken } from '../services/api';
 
-// Create Auth Context
+const USER_KEY = 'agrismart_user';
+
 const AuthContext = createContext(null);
 
-// Auth Provider Component
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser]                     = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading]               = useState(true);
   const navigate = useNavigate();
 
-  // Check if user is logged in on mount
+  // On mount: try to restore session from httpOnly refresh cookie
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  // Check authentication status
-  const checkAuth = async () => {
-    try {
-      // Get token from localStorage
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        return;
-      }
-
-      // Verify token and get user data (replace with actual API call)
-      const userData = await verifyToken(token);
-      
-      if (userData) {
-        setUser(userData);
+    const restore = async () => {
+      const stored = localStorage.getItem(USER_KEY);
+      if (!stored) { setLoading(false); return; }
+      const token = await tryRefresh();
+      if (token) {
+        setUser(JSON.parse(stored));
         setIsAuthenticated(true);
       } else {
-        // Token invalid, clear it
-        localStorage.removeItem('authToken');
+        localStorage.removeItem(USER_KEY);
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('authToken');
-    } finally {
-    }
-  };
-
-  // Verify token (mock implementation - replace with real API call)
-  const verifyToken = async (token) => {
-    // TODO: Replace with actual API call
-    // const response = await fetch('/api/auth/verify', {
-    //   headers: { Authorization: `Bearer ${token}` }
-    // });
-    // return response.json();
-
-    // Mock user data
-    return {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'admin',
-      isVerified: true,
+      setLoading(false);
     };
-  };
+    restore();
+  }, []);
 
-  // Login function
-  const login = async (email, password) => {
-    try {
+  // Listen for session expiry triggered by api.js auto-refresh failure
+  useEffect(() => {
+    const handler = () => _clearSession();
+    window.addEventListener('auth:expired', handler);
+    return () => window.removeEventListener('auth:expired', handler);
+  }, []);
 
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-      // const data = await response.json();
-
-      // Mock successful login
-      const data = {
-        token: 'mock-jwt-token-' + Date.now(),
-        user: {
-          id: '1',
-          name: 'John Doe',
-          email: email,
-          role: 'admin',
-          isVerified: false,
-        },
-      };
-
-      // Save token
-      localStorage.setItem('authToken', data.token);
-      
-      // Set user state
-      setUser(data.user);
-      setIsAuthenticated(true);
-
-      return { success: true, user: data.user };
-    } catch (error) {
-      console.error('Login failed:', error);
-      return { success: false, error: error.message };
-    } finally {
-    }
-  };
-
-
-  // Logout function
-  const logout = () => {
-    // Clear token
-    localStorage.removeItem('authToken');
-    
-    // Clear user state
+  const _clearSession = () => {
+    localStorage.removeItem(USER_KEY);
     setUser(null);
     setIsAuthenticated(false);
-    
-    // Redirect to login
     navigate('/');
   };
 
-
-  // Context value
-  const value = {
-    user,
-    isAuthenticated,
-    login,
-    logout,
-    checkAuth,
+  const login = async (email, password) => {
+    try {
+      const data = await apiLogin(email, password);
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      setUser(data.user);
+      setIsAuthenticated(true);
+      return { success: true, user: data.user };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const logout = async () => {
+    try {
+      await apiLogout();
+    } finally {
+      _clearSession();
+    }
+  };
+
+  const value = { user, isAuthenticated, loading, login, logout };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };
 
 export default AuthContext;

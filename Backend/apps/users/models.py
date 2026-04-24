@@ -30,5 +30,13 @@ class User(models.Model):
         managed  = False
         db_table = 'users'
 
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
     def __str__(self):
         return self.username

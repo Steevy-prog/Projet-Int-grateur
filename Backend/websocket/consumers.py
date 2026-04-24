@@ -27,11 +27,19 @@ class DashboardConsumer(AsyncWebsocketConsumer):
         user = self.scope.get('user')
 
         if user is None:
+            logger.warning('WS connect rejected: no authenticated user')
+            await self.accept()
             await self.close(code=4001)
             return
 
-        await self.channel_layer.group_add(DASHBOARD_GROUP, self.channel_name)
         await self.accept()
+
+        try:
+            await self.channel_layer.group_add(DASHBOARD_GROUP, self.channel_name)
+        except Exception as exc:
+            logger.error('WS connect: channel_layer.group_add failed: %s', exc)
+            await self.close(code=4002)
+            return
 
         await self.send(json.dumps({
             'type':    'connection.established',

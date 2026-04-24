@@ -1,21 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bell, CheckCircle2, Filter, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-
-const MOCK_ALERTS = [
-  { id: 1, alert_type: 'threshold_breach', severity: 'critical', message: 'Humidité du sol en dessous du seuil minimum (18%)', sensor_name: 'Capteur Sol YL-69', actuator_name: null, triggered_at: '2026-04-24 15:40', acknowledged: false },
-  { id: 2, alert_type: 'threshold_breach', severity: 'warning', message: 'Température dépasse le seuil (29.5 °C)', sensor_name: 'Capteur Temp DHT22', actuator_name: null, triggered_at: '2026-04-24 15:30', acknowledged: false },
-  { id: 3, alert_type: 'co2_spike', severity: 'warning', message: 'Pic de CO₂ détecté (1450 ppm)', sensor_name: 'Capteur CO₂ SEN0159', actuator_name: null, triggered_at: '2026-04-24 14:55', acknowledged: true },
-  { id: 4, alert_type: 'sensor_offline', severity: 'critical', message: 'Capteur hors ligne depuis plus de 5 minutes', sensor_name: 'Capteur Niveau Eau', actuator_name: null, triggered_at: '2026-04-24 13:20', acknowledged: true },
-  { id: 5, alert_type: 'actuator_failure', severity: 'critical', message: "Pompe A n'a pas répondu à la commande d'activation", sensor_name: null, actuator_name: 'Pompe Irrigation A', triggered_at: '2026-04-24 12:10', acknowledged: true },
-  { id: 6, alert_type: 'sensor_recovered', severity: 'info', message: 'Capteur de luminosité de nouveau en ligne', sensor_name: 'Capteur Lumière BH1750', actuator_name: null, triggered_at: '2026-04-24 11:30', acknowledged: true },
-];
+import { useWebSocket } from '../hooks/useWebSocket';
+import * as alertsApi from '../services/alerts';
 
 const SEVERITY_STYLES = {
-  critical: 'bg-red-100 text-red-700',
-  warning:  'bg-amber-100 text-amber-700',
-  info:     'bg-blue-100 text-blue-700',
+  high:   'bg-red-100 text-red-700',
+  medium: 'bg-amber-100 text-amber-700',
+  low:    'bg-blue-100 text-blue-700',
 };
 
 const ALERT_TYPE_LABELS = {
@@ -28,29 +21,69 @@ const ALERT_TYPE_LABELS = {
   system_error:       'Erreur système',
 };
 
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
 export default function Alerts() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [severityFilter, setSeverityFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [alerts, setAlerts] = useState(MOCK_ALERTS);
+  const [statusFilter,   setStatusFilter]   = useState('all');
+  const [alerts,    setAlerts]   = useState([]);
+  const [loading,   setLoading]  = useState(true);
+  const [ackLoading, setAckLoading] = useState(null);
 
-  useEffect(() => {
-    if (!user) navigate('/');
-  }, [user]);
+  useEffect(() => { if (!user) navigate('/'); }, [user]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await alertsApi.list();
+      setAlerts(data);
+    } catch { /* show empty state */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Real-time: new alerts + acknowledgements
+  useWebSocket((event) => {
+    if (event.type === 'alert.new') {
+      setAlerts(prev => [{
+        id: event.alert_id, type: event.alert_type, severity: event.severity,
+        message: event.message, sensor_name: event.sensor_name,
+        actuator_name: event.actuator_name, triggered_at: event.triggered_at,
+        is_acknowledged: false,
+      }, ...prev]);
+    }
+    if (event.type === 'alert.acknowledged') {
+      setAlerts(prev => prev.map(a =>
+        a.id === event.alert_id
+          ? { ...a, is_acknowledged: true, acknowledged_by: event.acknowledged_by, acknowledged_at: event.acknowledged_at }
+          : a
+      ));
+    }
+  });
+
+  const handleAcknowledge = async (id) => {
+    setAckLoading(id);
+    try {
+      const updated = await alertsApi.acknowledge(id);
+      setAlerts(prev => prev.map(a => a.id === id ? { ...a, ...updated } : a));
+    } catch { /* ignore — WS event will update state if backend succeeds */ }
+    finally { setAckLoading(null); }
+  };
 
   const filtered = alerts.filter(a => {
     if (severityFilter !== 'all' && a.severity !== severityFilter) return false;
-    if (statusFilter === 'acknowledged' && !a.acknowledged) return false;
-    if (statusFilter === 'pending' && a.acknowledged) return false;
+    if (statusFilter === 'acknowledged' && !a.is_acknowledged)      return false;
+    if (statusFilter === 'pending'      &&  a.is_acknowledged)      return false;
     return true;
   });
 
-  const pendingCount = alerts.filter(a => !a.acknowledged).length;
-
-  const handleAcknowledge = (id) => {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a));
-  };
+  const pendingCount = alerts.filter(a => !a.is_acknowledged).length;
 
   return (
     <div className="space-y-6">
@@ -70,27 +103,21 @@ export default function Alerts() {
       <div className="flex flex-wrap gap-3 bg-white border border-slate-200 rounded-xl p-4 shadow-sm items-center">
         <Filter size={14} className="text-slate-400" />
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sévérité</span>
-        {[['all', 'Toutes'], ['critical', 'Critique'], ['warning', 'Avertissement'], ['info', 'Info']].map(([val, label]) => (
-          <button
-            key={val}
-            onClick={() => setSeverityFilter(val)}
+        {[['all', 'Toutes'], ['high', 'Élevée'], ['medium', 'Moyenne'], ['low', 'Faible']].map(([val, label]) => (
+          <button key={val} onClick={() => setSeverityFilter(val)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               severityFilter === val ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
+            }`}>
             {label}
           </button>
         ))}
         <div className="w-px bg-slate-200 self-stretch" />
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Statut</span>
         {[['all', 'Tous'], ['pending', 'En attente'], ['acknowledged', 'Acquittées']].map(([val, label]) => (
-          <button
-            key={val}
-            onClick={() => setStatusFilter(val)}
+          <button key={val} onClick={() => setStatusFilter(val)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               statusFilter === val ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
+            }`}>
             {label}
           </button>
         ))}
@@ -98,58 +125,62 @@ export default function Alerts() {
 
       {/* Table */}
       <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-            <tr>
-              <th className="px-6 py-3">Type</th>
-              <th className="px-6 py-3">Sévérité</th>
-              <th className="px-6 py-3">Message</th>
-              <th className="px-6 py-3">Source</th>
-              <th className="px-6 py-3">Déclenchée le</th>
-              <th className="px-6 py-3 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filtered.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <div className="h-6 w-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">
-                  Aucune alerte correspondante
-                </td>
+                <th className="px-6 py-3">Type</th>
+                <th className="px-6 py-3">Sévérité</th>
+                <th className="px-6 py-3">Message</th>
+                <th className="px-6 py-3">Source</th>
+                <th className="px-6 py-3">Déclenchée le</th>
+                <th className="px-6 py-3 text-right">Action</th>
               </tr>
-            ) : filtered.map(alert => (
-              <tr key={alert.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 font-medium text-slate-700 whitespace-nowrap">
-                  {ALERT_TYPE_LABELS[alert.alert_type] || alert.alert_type}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${SEVERITY_STYLES[alert.severity]}`}>
-                    {alert.severity}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-slate-600 max-w-xs">{alert.message}</td>
-                <td className="px-6 py-4 text-slate-500 whitespace-nowrap text-xs">
-                  {alert.sensor_name || alert.actuator_name || '—'}
-                </td>
-                <td className="px-6 py-4 text-slate-400 whitespace-nowrap text-xs">{alert.triggered_at}</td>
-                <td className="px-6 py-4 text-right">
-                  {alert.acknowledged ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                      <CheckCircle2 size={12} /> Acquittée
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">Aucune alerte correspondante</td>
+                </tr>
+              ) : filtered.map(alert => (
+                <tr key={alert.id} className="hover:bg-slate-50">
+                  <td className="px-6 py-4 font-medium text-slate-700 whitespace-nowrap">
+                    {ALERT_TYPE_LABELS[alert.type] || alert.type}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${SEVERITY_STYLES[alert.severity] || ''}`}>
+                      {alert.severity}
                     </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleAcknowledge(alert.id)}
-                      className="text-xs px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium"
-                    >
-                      Acquitter
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td className="px-6 py-4 text-slate-600 max-w-xs">{alert.message}</td>
+                  <td className="px-6 py-4 text-slate-500 whitespace-nowrap text-xs">
+                    {alert.sensor_name || alert.actuator_name || '—'}
+                  </td>
+                  <td className="px-6 py-4 text-slate-400 whitespace-nowrap text-xs">{formatDate(alert.triggered_at)}</td>
+                  <td className="px-6 py-4 text-right">
+                    {alert.is_acknowledged ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                        <CheckCircle2 size={12} /> Acquittée
+                      </span>
+                    ) : (
+                      <button type="button"
+                        disabled={ackLoading === alert.id}
+                        onClick={() => handleAcknowledge(alert.id)}
+                        className="text-xs px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium disabled:opacity-50"
+                      >
+                        {ackLoading === alert.id ? '…' : 'Acquitter'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

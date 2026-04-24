@@ -46,7 +46,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
-WSGI_APPLICATION = 'config.wsgi.application'
+# WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
 DATABASES = {
@@ -56,6 +56,20 @@ DATABASES = {
         **_parse_db_url(config('DATABASE_URL')),
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DB_NAME'),
+#         'USER': config('DB_USER'),
+#         'PASSWORD': config('DB_PASSWORD'),
+#         'HOST': config('DB_HOST'),  # Use unpooled host, no "-pooler"
+#         'PORT': config('DB_PORT', default='5432'),
+#         'OPTIONS': {
+#             'sslmode': 'require',  # ← Add this
+#         },
+#     }
+# }
 
 CHANNEL_LAYERS = {
     'default': {

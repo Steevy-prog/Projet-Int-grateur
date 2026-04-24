@@ -1,7 +1,10 @@
+import logging
 from urllib.parse import parse_qs
 from django.utils import timezone
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
+
+logger = logging.getLogger(__name__)
 
 
 class JWTAuthMiddleware(BaseMiddleware):
@@ -38,22 +41,31 @@ def _resolve_user(raw_token):
     from apps.authentication.utils import hash_token
     from apps.authentication.models import AccessToken
 
+    token_hash = hash_token(raw_token)
     try:
         token = (
             AccessToken.objects
             .select_related('user', 'session')
-            .get(token_hash=hash_token(raw_token))
+            .get(token_hash=token_hash)
         )
     except AccessToken.DoesNotExist:
+        logger.warning('WS auth: token not found in DB (hash prefix: %s)', token_hash[:8])
+        return None
+    except Exception as exc:
+        logger.error('WS auth: DB error looking up token: %s', exc)
         return None
 
     if token.revoked_at is not None:
+        logger.warning('WS auth: token revoked (user=%s)', token.user_id)
         return None
     if token.expires_at <= timezone.now():
+        logger.warning('WS auth: token expired (user=%s)', token.user_id)
         return None
     if not token.session.is_active:
+        logger.warning('WS auth: session revoked (user=%s)', token.user_id)
         return None
     if not token.user.is_active:
+        logger.warning('WS auth: user inactive (user=%s)', token.user_id)
         return None
 
     return token.user
