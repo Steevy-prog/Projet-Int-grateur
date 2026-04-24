@@ -26,6 +26,8 @@ DB_NAME="agriculture_intelligente"
 MIGRATION_USER="neondb_owner"
 MIGRATION_PASS="npg_UsYKh82OMXHr"
 
+DB_URL="postgresql://$PG_SUPERUSER:$MIGRATION_PASS@$PG_HOST:$PG_PORT/$DB_NAME"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

@@ -1,4 +1,3 @@
-from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -23,36 +22,31 @@ class SensorListView(APIView):
 
 
 class SensorDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def _get_sensor(self, sensor_id):
-        try:
-            return Sensor.objects.get(id=sensor_id)
-        except Sensor.DoesNotExist:
-            return None
+    """PATCH /api/sensors/:id/ — activate or deactivate a sensor (admin only)."""
+    permission_classes = [IsAdmin]
 
     def patch(self, request, sensor_id):
-        """Admin only — activate or deactivate a sensor."""
-        if request.user.role != 'admin':
-            return Response({'detail': 'Admin access required.'}, status=status.HTTP_403_FORBIDDEN)
-
-        sensor = self._get_sensor(sensor_id)
-        if not sensor:
+        try:
+            sensor = Sensor.objects.get(id=sensor_id)
+        except Sensor.DoesNotExist:
             return Response({'detail': 'Sensor not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         is_active = request.data.get('is_active')
         if is_active is None or not isinstance(is_active, bool):
-            return Response({'detail': 'is_active (boolean) is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'detail': 'is_active (boolean) is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         sensor.is_active = is_active
+        # trg_log_sensor_status DB trigger fires automatically on this save
         sensor.save(update_fields=['is_active'])
-        # DB trigger trg_log_sensor_status fires automatically here
 
         return Response(SensorSerializer(sensor).data)
 
 
 class SensorReadingsView(APIView):
-    """Historical readings for a single sensor with optional date filters."""
+    """GET /api/sensors/:id/readings/ — historical readings with optional date filters."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, sensor_id):
@@ -71,14 +65,14 @@ class SensorReadingsView(APIView):
         if to_date:
             readings = readings.filter(measured_at__lte=to_date)
 
-        # Limit to last 500 points by default to protect the dashboard
+        # Cap at 500 points to protect the dashboard from huge payloads
         readings = readings[:500]
 
         return Response(SensorReadingSerializer(readings, many=True).data)
 
 
 class SensorLatestView(APIView):
-    """Most recent reading per sensor — used by dashboard summary cards."""
+    """GET /api/sensors/:id/latest/ — most recent reading for one sensor."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, sensor_id):
@@ -103,12 +97,10 @@ class ThresholdListView(APIView):
 
 
 class ThresholdDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    """PATCH /api/thresholds/:sensor_type/ — update min/max threshold (admin only)."""
+    permission_classes = [IsAdmin]
 
     def patch(self, request, sensor_type):
-        if request.user.role != 'admin':
-            return Response({'detail': 'Admin access required.'}, status=status.HTTP_403_FORBIDDEN)
-
         try:
             threshold = Threshold.objects.get(sensor_type=sensor_type)
         except Threshold.DoesNotExist:

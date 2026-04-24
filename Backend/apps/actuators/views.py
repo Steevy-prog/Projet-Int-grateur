@@ -9,6 +9,8 @@ from apps.actuators.models import Actuator, Action
 from apps.actuators.serializers import ActuatorSerializer, ActionSerializer, TriggerActionSerializer
 from apps.users.permissions import IsAdmin
 
+from websocket.events import DASHBOARD_GROUP, ACTUATOR_UPDATED
+
 
 class ActuatorListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -38,8 +40,9 @@ class ActuatorActionView(APIView):
             source=Action.Source.WEB,
             notes=serializer.validated_data.get('notes', ''),
         )
-        # DB trigger trg_actuator_on_action updates actuator.status + last_triggered_at automatically.
-        # Refresh from DB to get the trigger-updated values.
+
+        # trg_actuator_on_action DB trigger updates actuator.status + last_triggered_at.
+        # Refresh to get those trigger-managed values before broadcasting.
         actuator.refresh_from_db()
 
         _broadcast_actuator_update(actuator)
@@ -51,14 +54,16 @@ class ActuatorActionView(APIView):
 
 
 def _broadcast_actuator_update(actuator):
-    """Push actuator.updated event to all connected WebSocket clients."""
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        'dashboard',
+        DASHBOARD_GROUP,
         {
-            'type': 'actuator.updated',
+            'type':              ACTUATOR_UPDATED,
             'actuator_id':       str(actuator.id),
             'status':            actuator.status,
-            'last_triggered_at': actuator.last_triggered_at.isoformat() if actuator.last_triggered_at else None,
+            'last_triggered_at': (
+                actuator.last_triggered_at.isoformat()
+                if actuator.last_triggered_at else None
+            ),
         },
     )

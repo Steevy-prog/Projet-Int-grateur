@@ -95,6 +95,14 @@ SIMPLE_JWT = {
 # ESP32 static API key — compared using hmac.compare_digest in IoT auth class
 API_KEY_ESP32 = config('API_KEY_ESP32')
 
+# MQTT broker (Mosquitto)
+MQTT_BROKER_HOST  = config('MQTT_BROKER_HOST',  default='localhost')
+MQTT_BROKER_PORT  = config('MQTT_BROKER_PORT',  default=1883, cast=int)
+MQTT_USERNAME     = config('MQTT_USERNAME',     default='')
+MQTT_PASSWORD     = config('MQTT_PASSWORD',     default='')
+MQTT_CLIENT_ID    = config('MQTT_CLIENT_ID',    default='agrismart-django')
+MQTT_TOPIC_PREFIX = config('MQTT_TOPIC_PREFIX', default='agrismart')
+
 LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'UTC'
 USE_I18N = True

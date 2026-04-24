@@ -27,3 +27,6 @@ redis>=5.0
 
 # Password hashing (bcrypt compatible with PostgreSQL crypt())
 bcrypt>=4.0
+
+# MQTT client (ESP32 ↔ Mosquitto ↔ Django)
+paho-mqtt>=1.6.1
