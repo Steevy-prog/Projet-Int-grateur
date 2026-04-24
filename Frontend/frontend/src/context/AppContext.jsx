@@ -8,6 +8,7 @@ const AppContext = createContext(null);
 export const AppProvider = ({ children }) => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isLive, setIsLive] = useState(true);
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   
   // Context value
   const value = {
@@ -15,6 +16,8 @@ export const AppProvider = ({ children }) => {
     setCurrentPage,
     isLive,
     setIsLive,
+    createUserModalOpen,
+    setCreateUserModalOpen,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

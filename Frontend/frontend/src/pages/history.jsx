@@ -1,97 +1,130 @@
-import { React, useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Activity, 
-  Settings2, 
-  Bell, 
-  Users, 
-  Terminal, 
-  LogOut, 
-  Droplets, 
-  Thermometer, 
-  CloudSun, 
-  Power,
-  ChevronRight,
-  AlertTriangle,
-  Download,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  Clock
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Zap, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-import Card from '../components/common/card';
 import { useNavigate } from 'react-router-dom';
+import Card from '../components/common/card';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
 
+const MOCK_ACTIONS = [
+  { id: 1, actuator: 'Pompe Irrigation A', action_type: 'activate',   source: 'script', triggered_by: 'admin_jean',   executed_at: '2026-04-24 15:40' },
+  { id: 2, actuator: 'Ventilateur',        action_type: 'activate',   source: 'script', triggered_by: 'system',        executed_at: '2026-04-24 15:38' },
+  { id: 3, actuator: 'Éclairage LED',      action_type: 'deactivate', source: 'api',    triggered_by: 'operator_marc', executed_at: '2026-04-24 14:50' },
+  { id: 4, actuator: 'Pompe Irrigation A', action_type: 'deactivate', source: 'api',    triggered_by: 'admin_jean',    executed_at: '2026-04-24 14:10' },
+  { id: 5, actuator: 'Ventilateur',        action_type: 'deactivate', source: 'script', triggered_by: 'system',        executed_at: '2026-04-24 13:45' },
+];
 
-
-const MOCK_SENSOR_DATA = Array.from({ length: 24 }, (_, i) => ({
-  time: `${i}:00`,
-  temp: 22 + Math.random() * 5,
-  humidity: 45 + Math.random() * 15,
-  moisture: 30 + Math.random() * 10
+const MOCK_READINGS = Array.from({ length: 24 }, (_, i) => ({
+  time:        `${i}:00`,
+  temperature: +(22 + Math.sin(i / 4) * 3).toFixed(1),
+  humidity:    +(55 + Math.cos(i / 3) * 8).toFixed(1),
+  co2:         +(800 + Math.sin(i / 5) * 150).toFixed(0),
 }));
 
+const TABS = [
+  { id: 'actions',  label: 'Actions Actionneurs', icon: Zap },
+  { id: 'readings', label: 'Relevés Capteurs',    icon: Activity },
+];
 
-const Dashboard = () => (
-  <div className="space-y-6 animate-in fade-in duration-500">
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card title="Température" icon={Thermometer}>
-        <div className="text-3xl font-bold text-slate-800">24.5 °C</div>
-        <p className="text-xs text-slate-500 mt-1">+1.2% depuis 1h</p>
-      </Card>
-      <Card title="Humidité" icon={CloudSun}>
-        <div className="text-3xl font-bold text-slate-800">58 %</div>
-        <p className="text-xs text-slate-500 mt-1">Niveau optimal</p>
-      </Card>
-      <Card title="Humidité du Sol" icon={Droplets}>
-        <div className="text-3xl font-bold text-slate-800">32 %</div>
-        <p className="text-xs text-orange-500 mt-1">Seuil bas détecté</p>
-      </Card>
-    </div>
+export default function History() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('actions');
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card title="Aperçu des cycles (24h)">
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={MOCK_SENSOR_DATA}>
-              <defs>
-                <linearGradient id="colorMoist" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#059669" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="time" hide />
-              <YAxis hide />
-              <Tooltip />
-              <Area type="monotone" dataKey="moisture" stroke="#059669" fillOpacity={1} fill="url(#colorMoist)" />
-            </AreaChart>
-          </ResponsiveContainer>
+  useEffect(() => {
+    if (!user) navigate('/');
+  }, [user]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-slate-800">Historique & Exports</h2>
+        <button
+          type="button"
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium"
+        >
+          <Download size={16} /> Exporter CSV
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-white text-emerald-700 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <tab.icon size={14} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'actions' && (
+        <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+              <tr>
+                <th className="px-6 py-3">Actionneur</th>
+                <th className="px-6 py-3">Action</th>
+                <th className="px-6 py-3">Source</th>
+                <th className="px-6 py-3">Déclenché par</th>
+                <th className="px-6 py-3">Horodatage</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {MOCK_ACTIONS.map(action => (
+                <tr key={action.id} className="hover:bg-slate-50">
+                  <td className="px-6 py-4 font-medium text-slate-700">{action.actuator}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                      action.action_type === 'activate'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {action.action_type === 'activate' ? 'ACTIVÉ' : 'DÉSACTIVÉ'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                      action.source === 'script' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {action.source.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-500 text-xs">{action.triggered_by}</td>
+                  <td className="px-6 py-4 text-slate-400 text-xs">{action.executed_at}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </Card>
+      )}
 
-      <Card title="Alertes Actives" icon={AlertTriangle}>
-        <div className="space-y-3">
-          <div className="flex gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
-            <AlertTriangle className="text-red-600 size-5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-red-800">Sol trop sec - Secteur A</p>
-              <p className="text-xs text-red-600">Humidité &lt; 20%</p>
-            </div>
+      {activeTab === 'readings' && (
+        <Card title="Relevés des 24 dernières heures">
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={MOCK_READINGS}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="temperature" stroke="#ef4444" strokeWidth={2} dot={false} name="Temp (°C)" />
+                <Line type="monotone" dataKey="humidity"    stroke="#3b82f6" strokeWidth={2} dot={false} name="Humidité (%)" />
+                <Line type="monotone" dataKey="co2"         stroke="#8b5cf6" strokeWidth={2} dot={false} name="CO₂ (ppm)" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-          <div className="flex gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-            <AlertTriangle className="text-amber-600 size-5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">Température élevée - Serre 1</p>
-              <p className="text-xs text-amber-600">28.5°C atteint à 14:20</p>
-            </div>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
     </div>
-  </div>
-);
-
-export default Dashboard;
+  );
+}

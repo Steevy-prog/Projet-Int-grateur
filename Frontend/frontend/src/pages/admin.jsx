@@ -1,103 +1,153 @@
-import { React, useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Activity, 
-  Settings2, 
-  Bell, 
-  Users, 
-  Terminal, 
-  LogOut, 
-  Droplets, 
-  Thermometer, 
-  CloudSun, 
-  Power,
-  ChevronRight,
-  AlertTriangle,
-  Download,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  Clock
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Shield, Eye, UserCheck, UserX, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import Card from '../components/common/card';
 import { useNavigate } from 'react-router-dom';
-
-
+import { useApp } from '../context/AppContext';
+import CreateUserModal from '../components/modals/CreateUserModal';
 
 const INITIAL_USERS = [
-  { id: 1, username: 'admin_jean', email: 'jean@ferme.ci', role: 'Admin', is_active: true },
-  { id: 2, username: 'operator_marc', email: 'marc@ferme.ci', role: 'Operator', is_active: true },
+  { id: 1, username: 'admin_jean',    email: 'jean@ferme.ci',  role: 'admin',  is_active: true  },
+  { id: 2, username: 'operator_marc', email: 'marc@ferme.ci',  role: 'viewer', is_active: true  },
+  { id: 3, username: 'viewer_paul',   email: 'paul@ferme.ci',  role: 'viewer', is_active: false },
 ];
 
+const ROLE_STYLES = {
+  admin:  { icon: Shield, badge: 'bg-purple-100 text-purple-700', label: 'Admin'  },
+  viewer: { icon: Eye,    badge: 'bg-blue-100 text-blue-700',     label: 'Viewer' },
+};
 
-const Admin = () => {
+export default function Admin() {
   const navigate = useNavigate();
-
   const { user } = useAuth();
-  
-    useEffect(() => {
-      if (!user) {
-        navigate('/');
-      }else if (user?.role !== 'admin') {
-        navigate('/dashboard');
-      }
-    }, [user]);
-
+  const { createUserModalOpen, setCreateUserModalOpen } = useApp();
   const [users, setUsers] = useState(INITIAL_USERS);
-  
+
+  useEffect(() => {
+    if (!user)                    navigate('/');
+    else if (user?.role !== 'admin') navigate('/dashboard');
+  }, [user]);
+
+  const toggleActive = (id) => {
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, is_active: !u.is_active } : u));
+  };
+
+  const activeCount   = users.filter(u => u.is_active).length;
+  const adminCount    = users.filter(u => u.role === 'admin').length;
+  const viewerCount   = users.filter(u => u.role === 'viewer').length;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-slate-800">Gestion des Utilisateurs</h2>
-        <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium">
-          <Plus size={16} /> Nouvel Utilisateur
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Gestion des Utilisateurs</h2>
+          <p className="text-sm text-slate-400 mt-0.5">{users.length} compte{users.length > 1 ? 's' : ''} enregistré{users.length > 1 ? 's' : ''}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreateUserModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm self-start sm:self-auto"
+        >
+          <Plus size={15} />
+          Nouvel utilisateur
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Actifs',     value: activeCount, color: 'text-emerald-600' },
+          { label: 'Admins',     value: adminCount,  color: 'text-purple-600'  },
+          { label: 'Viewers',    value: viewerCount, color: 'text-blue-600'    },
+        ].map(s => (
+          <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm text-center">
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* User table */}
+      <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-semibold text-slate-700 text-sm">Comptes utilisateurs</h3>
+        </div>
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold">
+          <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
             <tr>
-              <th className="px-6 py-4">Utilisateur</th>
-              <th className="px-6 py-4">Rôle</th>
-              <th className="px-6 py-4">État</th>
-              <th className="px-6 py-4 text-right">Actions</th>
+              <th className="px-5 py-3">Utilisateur</th>
+              <th className="px-5 py-3">Rôle</th>
+              <th className="px-5 py-3">État</th>
+              <th className="px-5 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {users.map(u => (
-              <tr key={u.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4">
-                  <div className="font-medium text-slate-800">{u.username}</div>
-                  <div className="text-xs text-slate-500">{u.email}</div>
-                </td>
-                <td className="px-6 py-4 text-slate-600">{u.role}</td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                    {u.is_active ? 'ACTIF' : 'INACTIF'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right space-x-3">
-                  <button className="text-slate-400 hover:text-emerald-600 transition-colors">Modifier</button>
-                  <button className="text-slate-400 hover:text-red-600 transition-colors">Supprimer</button>
-                </td>
-              </tr>
-            ))}
+            {users.map(u => {
+              const roleStyle = ROLE_STYLES[u.role] || ROLE_STYLES.viewer;
+              const RoleIcon  = roleStyle.icon;
+              return (
+                <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-xs font-bold shrink-0">
+                        {u.username.split('_').map(w => w[0].toUpperCase()).join('').slice(0, 2)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800">{u.username}</p>
+                        <p className="text-[11px] text-slate-400">{u.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${roleStyle.badge}`}>
+                      <RoleIcon size={10} />
+                      {roleStyle.label}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      <span className={`text-xs font-medium ${u.is_active ? 'text-emerald-700' : 'text-slate-500'}`}>
+                        {u.is_active ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Modifier"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleActive(u.id)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          u.is_active
+                            ? 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                            : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        title={u.is_active ? 'Désactiver' : 'Activer'}
+                      >
+                        {u.is_active ? <UserX size={13} /> : <UserCheck size={13} />}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      <Card title="Logs Système (Audit)" icon={Terminal}>
-        <div className="bg-slate-900 rounded-lg p-4 font-mono text-xs text-slate-300 space-y-2 overflow-y-auto max-h-48">
-          <p><span className="text-emerald-500">[15:40:02]</span> COMMAND_SENT: ACTIVATE_PUMP_A</p>
-          <p><span className="text-emerald-500">[15:38:12]</span> SCRIPT_TRIGGER: AUTO_COOLING_INITIATED</p>
-          <p><span className="text-emerald-500">[15:35:55]</span> DB_SYNC: 12 READINGS_UPLOADED_SUCCESS</p>
-          <p><span className="text-amber-500">[15:30:00]</span> ALERT_GENERATED: LOW_MOISTURE_DETECTED</p>
+      {/* Modal */}
+      {createUserModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <CreateUserModal />
         </div>
-      </Card>
+      )}
     </div>
   );
-};
-
-export default Admin;
+}
