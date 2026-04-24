@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Terminal, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import * as logsApi from '../services/logs';
 
 function formatDate(iso) {
@@ -12,6 +13,7 @@ function formatDate(iso) {
 export default function Logs() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const toast     = useToast();
 
   const [logs,         setLogs]         = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -27,8 +29,9 @@ export default function Logs() {
     setLoading(true);
     try {
       setLogs(await logsApi.list());
-    } catch { /* show empty state */ }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.message || 'Impossible de charger les logs.');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -121,7 +124,7 @@ export default function Logs() {
                       {(log.source || '').toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 text-xs font-mono">{log.executed_by || '—'}</td>
+                  <td className="px-6 py-4 text-slate-500 text-xs font-mono">{log.executed_by_username || '—'}</td>
                   <td className="px-6 py-4 text-slate-400 text-xs font-mono">{formatDate(log.executed_at)}</td>
                 </tr>
               ))}

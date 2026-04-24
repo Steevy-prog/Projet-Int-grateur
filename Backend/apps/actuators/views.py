@@ -20,6 +20,23 @@ class ActuatorListView(APIView):
         return Response(ActuatorSerializer(actuators, many=True).data)
 
 
+class ActuatorActionsView(APIView):
+    """GET /api/actuators/actions/ — list all actuator actions, newest first."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        qs = Action.objects.select_related('actuator', 'triggered_by').order_by('-triggered_at')
+
+        from_dt = request.query_params.get('from')
+        to_dt   = request.query_params.get('to')
+        if from_dt:
+            qs = qs.filter(triggered_at__gte=from_dt)
+        if to_dt:
+            qs = qs.filter(triggered_at__lte=to_dt)
+
+        return Response(ActionSerializer(qs[:200], many=True).data)
+
+
 class ActuatorActionView(APIView):
     """POST /api/actuators/:id/action/ — admin only, triggers on/off."""
     permission_classes = [IsAdmin]

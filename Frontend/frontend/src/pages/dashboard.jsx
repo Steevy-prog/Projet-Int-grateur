@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import Card from '../components/common/card';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import * as sensorsApi   from '../services/sensors';
 import * as alertsApi    from '../services/alerts';
@@ -58,12 +59,12 @@ const TrendIcon = ({ trend }) => {
 
 function SensorCard({ sensor, history }) {
   const meta = SENSOR_META[sensor.type] || {};
-  const { status, label: statusLabel } = getSensorStatus(sensor.type, sensor.last_value);
+  const { status, label: statusLabel } = getSensorStatus(sensor.type, sensor.latest_value);
   const { icon: Icon, color, gradientId, key, label, unit } = meta;
 
   const miniData = useMemo(() => (history || []).slice(-12).map((r, i) => ({ i, [key]: parseFloat(r.value) })), [history, key]);
 
-  const value = sensor.last_value != null ? parseFloat(sensor.last_value).toLocaleString('fr-FR') : '—';
+  const value = sensor.latest_value != null ? parseFloat(sensor.latest_value).toLocaleString('fr-FR') : '—';
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
@@ -119,6 +120,7 @@ function formatTime(iso) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const toast     = useToast();
 
   const [sensors,   setSensors]   = useState([]);
   const [histories, setHistories] = useState({});
@@ -139,7 +141,6 @@ export default function Dashboard() {
       setAlerts(aData);
       setActuators(actData);
 
-      // Fetch 24h readings for each sensor (build chart data)
       const now   = new Date();
       const from  = new Date(now - 24 * 3600 * 1000).toISOString();
       const hists = {};
@@ -151,8 +152,9 @@ export default function Dashboard() {
         })
       );
       setHistories(hists);
-    } catch { /* silently fall through — user sees empty state */ }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.message || 'Impossible de charger le tableau de bord.');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -161,7 +163,7 @@ export default function Dashboard() {
   useWebSocket((event) => {
     if (event.type === 'sensor.reading') {
       setSensors(prev => prev.map(s =>
-        s.id === event.sensor_id ? { ...s, last_value: event.value } : s
+        s.id === event.sensor_id ? { ...s, latest_value: event.value, latest_read_at: event.measured_at } : s
       ));
       setHistories(prev => {
         const curr = prev[event.sensor_id] || [];
@@ -286,8 +288,8 @@ export default function Dashboard() {
                   <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} interval={5} />
                   <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} width={40} />
                   <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="co2"   name="CO₂ (ppm)"   stroke="#10b981" fill="url(#dCO2)"   strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="light" name="Lumière (lx)" stroke="#f59e0b" fill="url(#dLight)" strokeWidth={2} dot={false} />
+                  <Area type="monotone" dataKey="co2"        name="CO₂ (ppm)"   stroke="#10b981" fill="url(#dCO2)"   strokeWidth={2} dot={false} />
+                  <Area type="monotone" dataKey="luminosity" name="Lumière (lx)" stroke="#f59e0b" fill="url(#dLight)" strokeWidth={2} dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

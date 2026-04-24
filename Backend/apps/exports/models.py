@@ -10,7 +10,7 @@ class Export(models.Model):
         ALERTS          = 'alerts',          'Alerts'
 
     id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    exported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exports')
+    exported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exports', db_column='exported_by')
     export_type = models.CharField(max_length=20, choices=Type.choices)
     filters     = models.JSONField(null=True, blank=True)  # e.g. {"from": "2025-01-01", "sensor_id": "..."}
     file_path   = models.TextField(null=True, blank=True)

@@ -2,16 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Download, Zap, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import Card from '../components/common/card';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import * as sensorsApi from '../services/sensors';
-
-// Actuator actions come from the backend via the actuators app.
-// The API for action history: GET /api/actuators/ returns actuators but no action list endpoint.
-// We use script-logs as the proxy for actuator commands history.
-import * as logsApi from '../services/logs';
+import * as actionsApi from '../services/actions';
+import * as exportsApi from '../services/exports';
 
 const TABS = [
   { id: 'actions',  label: 'Actions Actionneurs', icon: Zap      },
@@ -19,6 +17,17 @@ const TABS = [
 ];
 
 const SENSOR_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#06b6d4'];
+
+const ACTION_TYPE_LABELS = {
+  turn_on:  'Activation',
+  turn_off: 'Désactivation',
+};
+
+const SOURCE_LABELS = {
+  web:  { label: 'Web',  cls: 'bg-blue-100 text-blue-700'   },
+  cli:  { label: 'CLI',  cls: 'bg-purple-100 text-purple-700' },
+  auto: { label: 'Auto', cls: 'bg-amber-100 text-amber-700'  },
+};
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -28,23 +37,25 @@ function formatDate(iso) {
 export default function History() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const toast     = useToast();
   const [activeTab, setActiveTab] = useState('actions');
 
-  const [logs,      setLogs]      = useState([]);
+  const [actions,   setActions]   = useState([]);
   const [sensors,   setSensors]   = useState([]);
   const [chartData, setChartData] = useState([]);
   const [loading,   setLoading]   = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => { if (!user) navigate('/'); }, [user]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [logData, sData] = await Promise.all([
-        logsApi.list(),
+      const [actionData, sData] = await Promise.all([
+        actionsApi.list(),
         sensorsApi.list(),
       ]);
-      setLogs(logData);
+      setActions(actionData);
       setSensors(sData);
 
       // Fetch 24h readings for all sensors
@@ -61,29 +72,35 @@ export default function History() {
       const buckets = {};
       allReadings.forEach(({ type, readings }) => {
         readings.forEach(r => {
-          const h = new Date(r.measured_at).getHours();
+          const h   = new Date(r.measured_at).getHours();
           const key = `${String(h).padStart(2, '0')}:00`;
           if (!buckets[key]) buckets[key] = { time: key };
           buckets[key][type] = parseFloat(r.value);
         });
       });
       setChartData(Object.values(buckets).sort((a, b) => a.time.localeCompare(b.time)));
-    } catch { /* show empty state */ }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.message || 'Impossible de charger l\'historique.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const handleExport = () => {
-    if (!chartData.length) return;
-    const headers = Object.keys(chartData[0]).join(',');
-    const rows    = chartData.map(row => Object.values(row).join(','));
-    const csv     = [headers, ...rows].join('\n');
-    const blob    = new Blob([csv], { type: 'text/csv' });
-    const url     = URL.createObjectURL(blob);
-    const a       = document.createElement('a');
-    a.href = url; a.download = 'historique_releves.csv'; a.click();
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      if (activeTab === 'actions') {
+        await exportsApi.generate('actions', {}, 'historique_actions.csv');
+      } else {
+        await exportsApi.generate('sensor_readings', {}, 'historique_releves.csv');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Erreur lors de l\'export.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const sensorTypes = [...new Set(sensors.map(s => s.type))];
@@ -92,9 +109,13 @@ export default function History() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-slate-800">Historique & Exports</h2>
-        <button type="button" onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium">
-          <Download size={16} /> Exporter CSV
+        <button type="button" onClick={handleExport} disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium disabled:opacity-60">
+          {exporting
+            ? <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <Download size={16} />
+          }
+          Exporter CSV
         </button>
       </div>
 
@@ -122,44 +143,53 @@ export default function History() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
                   <tr>
-                    <th className="px-6 py-3">Commande</th>
-                    <th className="px-6 py-3">Résultat</th>
+                    <th className="px-6 py-3">Actionneur</th>
+                    <th className="px-6 py-3">Action</th>
                     <th className="px-6 py-3">Source</th>
                     <th className="px-6 py-3">Déclenché par</th>
+                    <th className="px-6 py-3">Notes</th>
                     <th className="px-6 py-3">Horodatage</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {logs.length === 0 ? (
+                  {actions.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-slate-400 text-sm">Aucune action enregistrée</td>
+                      <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">
+                        Aucune action enregistrée
+                      </td>
                     </tr>
-                  ) : logs.map(log => (
-                    <tr key={log.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4">
-                        <div className="font-mono text-xs text-slate-700">{log.command}</div>
-                        {log.script_name && (
-                          <div className="font-mono text-[10px] text-slate-400 mt-0.5">{log.script_name}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
-                          log.result === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                          {log.result === 'success' ? 'SUCCÈS' : 'ÉCHEC'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
-                          log.source === 'script' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {(log.source || '').toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs font-mono">{log.executed_by || '—'}</td>
-                      <td className="px-6 py-4 text-slate-400 text-xs">{formatDate(log.executed_at)}</td>
-                    </tr>
-                  ))}
+                  ) : actions.map(a => {
+                    const src = SOURCE_LABELS[a.source] || { label: a.source, cls: 'bg-slate-100 text-slate-600' };
+                    return (
+                      <tr key={a.id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4">
+                          <p className="font-semibold text-slate-700 text-xs">{a.actuator_name}</p>
+                          <p className="text-[10px] text-slate-400">{a.actuator_type}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                            a.action_type === 'turn_on'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {ACTION_TYPE_LABELS[a.action_type] || a.action_type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${src.cls}`}>
+                            {src.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 text-xs font-mono">
+                          {a.triggered_by_username || '—'}
+                        </td>
+                        <td className="px-6 py-4 text-slate-400 text-xs max-w-[140px] truncate">
+                          {a.notes || '—'}
+                        </td>
+                        <td className="px-6 py-4 text-slate-400 text-xs">{formatDate(a.triggered_at)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

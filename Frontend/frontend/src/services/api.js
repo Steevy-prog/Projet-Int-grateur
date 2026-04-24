@@ -62,3 +62,37 @@ export async function request(method, path, body = null, retry = true) {
 export const get   = (path)       => request('GET',   path);
 export const post  = (path, body) => request('POST',  path, body);
 export const patch = (path, body) => request('PATCH', path, body);
+
+// Like request() but returns the raw Response (for CSV/blob downloads).
+export async function download(method, path, body = null, retry = true) {
+  const headers = {};
+  if (body !== null) headers['Content-Type'] = 'application/json';
+  if (_accessToken)  headers['Authorization'] = `Bearer ${_accessToken}`;
+
+  const opts = { method, headers, credentials: 'include' };
+  if (body !== null) opts.body = JSON.stringify(body);
+
+  const res = await fetch(`${BASE_URL}${path}`, opts);
+
+  if (res.status === 401 && retry) {
+    try {
+      await _refreshOnce();
+      return download(method, path, body, false);
+    } catch {
+      clearToken();
+      window.dispatchEvent(new Event('auth:expired'));
+      throw new Error('Session expirée. Veuillez vous reconnecter.');
+    }
+  }
+
+  if (!res.ok) {
+    let detail = `Erreur HTTP ${res.status}`;
+    try {
+      const err = await res.json();
+      detail = err.detail || Object.values(err).flat().join(' ') || detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+
+  return res;
+}

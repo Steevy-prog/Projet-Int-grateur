@@ -7,8 +7,10 @@ import {
 import Card from '../components/common/card';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import * as sensorsApi from '../services/sensors';
+import * as exportsApi from '../services/exports';
 
 const SENSOR_META = {
   temperature: { icon: Thermometer, color: '#ef4444', model: 'DHT22'   },
@@ -43,6 +45,7 @@ function formatValue(value, unit) {
 export default function Monitoring() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const toast     = useToast();
 
   const [sensors,   setSensors]  = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -56,7 +59,6 @@ export default function Monitoring() {
       const sData = await sensorsApi.list();
       setSensors(sData);
 
-      // Fetch 24h readings for all sensors and merge into chart buckets
       const now  = new Date();
       const from = new Date(now - 24 * 3600 * 1000).toISOString();
       const allReadings = await Promise.all(
@@ -78,8 +80,9 @@ export default function Monitoring() {
         });
       });
       setChartData(Object.values(buckets).sort((a, b) => parseInt(a.time) - parseInt(b.time)));
-    } catch { /* show empty state */ }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.message || 'Impossible de charger les capteurs.');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -88,13 +91,13 @@ export default function Monitoring() {
     if (event.type === 'sensor.reading') {
       setSensors(prev => prev.map(s =>
         s.id === event.sensor_id
-          ? { ...s, last_value: event.value, last_reading_at: event.measured_at }
+          ? { ...s, latest_value: event.value, latest_read_at: event.measured_at }
           : s
       ));
     }
     if (event.type === 'sensor.status') {
       setSensors(prev => prev.map(s =>
-        s.id === event.sensor_id ? { ...s, is_active: event.is_active } : s
+        s.id === event.sensor_id ? { ...s, last_status: event.status } : s
       ));
     }
   });
@@ -102,16 +105,17 @@ export default function Monitoring() {
   const activeSensors   = sensors.filter(s => s.is_active).length;
   const inactiveSensors = sensors.filter(s => !s.is_active).length;
 
-  const handleExport = () => {
-    if (!chartData.length) return;
-    const headers = Object.keys(chartData[0]).join(',');
-    const rows    = chartData.map(row => Object.values(row).join(','));
-    const csv     = [headers, ...rows].join('\n');
-    const blob    = new Blob([csv], { type: 'text/csv' });
-    const url     = URL.createObjectURL(blob);
-    const a       = document.createElement('a');
-    a.href = url; a.download = 'releves_capteurs.csv'; a.click();
-    URL.revokeObjectURL(url);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportsApi.generate('sensor_readings', {}, 'releves_capteurs.csv');
+    } catch (err) {
+      toast.error(err.message || 'Erreur lors de l\'export.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -131,9 +135,12 @@ export default function Monitoring() {
           <h2 className="text-xl font-bold text-slate-800">Surveillance des Capteurs</h2>
           <p className="text-sm text-slate-400 mt-0.5">Analyses et historique des relevés</p>
         </div>
-        <button type="button" onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium self-start sm:self-auto">
-          <Download size={15} />
+        <button type="button" onClick={handleExport} disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium self-start sm:self-auto disabled:opacity-60">
+          {exporting
+            ? <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <Download size={15} />
+          }
           Exporter les données
         </button>
       </div>
@@ -221,9 +228,9 @@ export default function Monitoring() {
                       </div>
                     </td>
                     <td className="px-5 py-3.5 font-semibold text-slate-700">
-                      {formatValue(sensor.last_value, sensor.unit)}
+                      {formatValue(sensor.latest_value, sensor.unit)}
                     </td>
-                    <td className="px-5 py-3.5 text-slate-400 text-xs">{formatLastSeen(sensor.last_reading_at)}</td>
+                    <td className="px-5 py-3.5 text-slate-400 text-xs">{formatLastSeen(sensor.latest_read_at)}</td>
                   </tr>
                 );
               })}

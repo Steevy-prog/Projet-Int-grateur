@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Bell, CheckCircle2, Filter, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import * as alertsApi from '../services/alerts';
 
@@ -29,6 +30,7 @@ function formatDate(iso) {
 export default function Alerts() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast    = useToast();
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter,   setStatusFilter]   = useState('all');
   const [alerts,    setAlerts]   = useState([]);
@@ -42,13 +44,13 @@ export default function Alerts() {
     try {
       const data = await alertsApi.list();
       setAlerts(data);
-    } catch { /* show empty state */ }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.message || 'Impossible de charger les alertes.');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  // Real-time: new alerts + acknowledgements
   useWebSocket((event) => {
     if (event.type === 'alert.new') {
       setAlerts(prev => [{
@@ -72,8 +74,10 @@ export default function Alerts() {
     try {
       const updated = await alertsApi.acknowledge(id);
       setAlerts(prev => prev.map(a => a.id === id ? { ...a, ...updated } : a));
-    } catch { /* ignore — WS event will update state if backend succeeds */ }
-    finally { setAckLoading(null); }
+      toast.success('Alerte acquittée.');
+    } catch (err) {
+      toast.error(err.message || 'Erreur lors de l\'acquittement.');
+    } finally { setAckLoading(null); }
   };
 
   const filtered = alerts.filter(a => {

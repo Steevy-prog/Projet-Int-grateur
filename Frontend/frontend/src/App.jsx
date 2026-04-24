@@ -12,8 +12,9 @@ import Logs       from './pages/logs';
 import Sidebar from './components/layout/sidebar';
 import Header  from './components/layout/header';
 
-import { AuthProvider } from './context/AuthContext';
-import { AppProvider  } from './context/AppContext';
+import { AuthProvider  } from './context/AuthContext';
+import { AppProvider   } from './context/AppContext';
+import { ToastProvider } from './context/ToastContext';
 
 function AppLayout() {
   return (
@@ -42,10 +43,12 @@ export default function App() {
     <Router>
       <AuthProvider>
         <AppProvider>
-          <Routes>
-            <Route path="/"   element={<Login />}     />
-            <Route path="/*"  element={<AppLayout />} />
-          </Routes>
+          <ToastProvider>
+            <Routes>
+              <Route path="/"   element={<Login />}     />
+              <Route path="/*"  element={<AppLayout />} />
+            </Routes>
+          </ToastProvider>
         </AppProvider>
       </AuthProvider>
     </Router>

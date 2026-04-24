@@ -3,7 +3,9 @@ import { Plus, Shield, Eye, UserCheck, UserX, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
 import CreateUserModal from '../components/modals/CreateUserModal';
+import EditUserModal   from '../components/modals/EditUserModal';
 import * as usersApi from '../services/users';
 
 const ROLE_STYLES = {
@@ -13,16 +15,17 @@ const ROLE_STYLES = {
 
 export default function Admin() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user }  = useAuth();
+  const toast     = useToast();
   const { createUserModalOpen, setCreateUserModalOpen } = useApp();
 
-  const [users,        setUsers]       = useState([]);
-  const [loading,      setLoading]     = useState(true);
-  const [togglingId,   setTogglingId]  = useState(null);
-  const [errorMsg,     setErrorMsg]    = useState('');
+  const [users,       setUsers]      = useState([]);
+  const [loading,     setLoading]    = useState(true);
+  const [togglingId,  setTogglingId] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
-    if (!user)                navigate('/');
+    if (!user)                  navigate('/');
     else if (user.role !== 'admin') navigate('/dashboard');
   }, [user]);
 
@@ -30,21 +33,23 @@ export default function Admin() {
     setLoading(true);
     try {
       setUsers(await usersApi.list());
-    } catch { /* show empty state */ }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.message || 'Impossible de charger les utilisateurs.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
   const toggleActive = async (u) => {
     setTogglingId(u.id);
-    setErrorMsg('');
     try {
       const updated = await usersApi.update(u.id, { is_active: !u.is_active });
       setUsers(prev => prev.map(x => x.id === u.id ? updated : x));
+      toast.success(updated.is_active ? `${u.username} activé.` : `${u.username} désactivé.`);
     } catch (err) {
-      setErrorMsg(err.message);
-      setTimeout(() => setErrorMsg(''), 4000);
+      toast.error(err.message || 'Erreur lors de la mise à jour.');
     } finally {
       setTogglingId(null);
     }
@@ -52,6 +57,11 @@ export default function Admin() {
 
   const onUserCreated = (newUser) => {
     setUsers(prev => [...prev, newUser]);
+    toast.success(`Compte "${newUser.username}" créé avec succès.`);
+  };
+
+  const onUserUpdated = (updatedUser) => {
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
   };
 
   const activeCount  = users.filter(u => u.is_active).length;
@@ -71,13 +81,6 @@ export default function Admin() {
           Nouvel utilisateur
         </button>
       </div>
-
-      {errorMsg && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2.5">
-          <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
-          {errorMsg}
-        </div>
-      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
@@ -149,6 +152,7 @@ export default function Admin() {
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button type="button"
+                          onClick={() => setEditingUser(u)}
                           className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                           title="Modifier">
                           <Pencil size={13} />
@@ -181,6 +185,16 @@ export default function Admin() {
       {createUserModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <CreateUserModal onCreated={onUserCreated} />
+        </div>
+      )}
+
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <EditUserModal
+            user={editingUser}
+            onUpdated={onUserUpdated}
+            onClose={() => setEditingUser(null)}
+          />
         </div>
       )}
     </div>

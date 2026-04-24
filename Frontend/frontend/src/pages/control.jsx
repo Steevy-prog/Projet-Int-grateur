@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Power, Settings2, Save, RotateCcw, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import Card from '../components/common/card';
 import { useWebSocket } from '../hooks/useWebSocket';
 import * as actuatorsApi  from '../services/actuators';
@@ -18,15 +19,14 @@ function formatTime(iso) {
 export default function Control() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const toast     = useToast();
 
-  const [actuators,    setActuators]    = useState([]);
-  const [thresholds,   setThresholds]   = useState([]);
+  const [actuators,      setActuators]      = useState([]);
+  const [thresholds,     setThresholds]     = useState([]);
   const [origThresholds, setOrigThresholds] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [toggling,     setToggling]     = useState(null);
-  const [saving,       setSaving]       = useState(false);
-  const [savedMsg,     setSavedMsg]     = useState('');
-  const [errorMsg,     setErrorMsg]     = useState('');
+  const [loading,        setLoading]        = useState(true);
+  const [toggling,       setToggling]       = useState(null);
+  const [saving,         setSaving]         = useState(false);
 
   useEffect(() => { if (!user) navigate('/'); }, [user]);
 
@@ -40,14 +40,15 @@ export default function Control() {
       const mapped = thrs.map(t => ({
         key:   t.sensor_type,
         label: THRESHOLD_LABELS[t.sensor_type] || t.sensor_type,
-        unit:  t.unit || THRESHOLD_UNITS[t.sensor_type] || '',
+        unit:  THRESHOLD_UNITS[t.sensor_type] || '',
         min:   parseFloat(t.min_value),
         max:   parseFloat(t.max_value),
       }));
       setThresholds(mapped);
       setOrigThresholds(mapped);
-    } catch { /* show empty state */ }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.message || 'Impossible de charger les données.');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -68,9 +69,9 @@ export default function Control() {
     try {
       const res = await actuatorsApi.trigger(actuator.id, action_type);
       setActuators(prev => prev.map(a => a.id === actuator.id ? res.actuator : a));
+      toast.success(`${actuator.name} ${action_type === 'turn_on' ? 'activé' : 'désactivé'}.`);
     } catch (err) {
-      setErrorMsg(err.message);
-      setTimeout(() => setErrorMsg(''), 4000);
+      toast.error(err.message || 'Erreur lors du contrôle de l\'actionneur.');
     } finally {
       setToggling(null);
     }
@@ -83,7 +84,6 @@ export default function Control() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setErrorMsg('');
     try {
       await Promise.all(
         thresholds.map(t =>
@@ -91,11 +91,9 @@ export default function Control() {
         )
       );
       setOrigThresholds(thresholds);
-      setSavedMsg('Seuils mis à jour avec succès.');
-      setTimeout(() => setSavedMsg(''), 3000);
+      toast.success('Seuils mis à jour avec succès.');
     } catch (err) {
-      setErrorMsg(err.message);
-      setTimeout(() => setErrorMsg(''), 4000);
+      toast.error(err.message || 'Erreur lors de la sauvegarde des seuils.');
     } finally {
       setSaving(false);
     }
@@ -117,13 +115,6 @@ export default function Control() {
         <h2 className="text-xl font-bold text-slate-800">Contrôle & Seuils</h2>
         <p className="text-sm text-slate-400 mt-0.5">Contrôle manuel des actionneurs et configuration des seuils</p>
       </div>
-
-      {errorMsg && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2.5">
-          <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
-          {errorMsg}
-        </div>
-      )}
 
       {/* Actuators */}
       <Card title="Actionneurs — Contrôle Manuel" icon={Zap}>
@@ -170,12 +161,6 @@ export default function Control() {
 
       {/* Thresholds */}
       <Card title="Seuils d'Automatisation" icon={Settings2}>
-        {savedMsg && (
-          <div className="mb-4 flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-2.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            {savedMsg}
-          </div>
-        )}
         {thresholds.length === 0 ? (
           <p className="text-sm text-slate-400">Aucun seuil configuré.</p>
         ) : (
@@ -224,14 +209,14 @@ const THRESHOLD_LABELS = {
   temperature: 'Température',
   humidity:    'Humidité Air',
   co2:         'CO₂',
-  light:       'Luminosité',
-  water:       'Niveau Eau',
+  luminosity:  'Luminosité',
+  water_level: 'Niveau Eau',
 };
 
 const THRESHOLD_UNITS = {
   temperature: '°C',
   humidity:    '%',
   co2:         'ppm',
-  light:       'lx',
-  water:       '%',
+  luminosity:  'lx',
+  water_level: '%',
 };
