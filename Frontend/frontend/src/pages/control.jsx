@@ -41,8 +41,8 @@ export default function Control() {
         key:   t.sensor_type,
         label: THRESHOLD_LABELS[t.sensor_type] || t.sensor_type,
         unit:  THRESHOLD_UNITS[t.sensor_type] || '',
-        min:   parseFloat(t.min_value),
-        max:   parseFloat(t.max_value),
+        min:   t.min_value != null ? parseFloat(t.min_value) : 0,
+        max:   t.max_value != null ? parseFloat(t.max_value) : 0,
       }));
       setThresholds(mapped);
       setOrigThresholds(mapped);
