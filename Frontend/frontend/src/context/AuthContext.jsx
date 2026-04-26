@@ -13,12 +13,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading]               = useState(true);
   const navigate = useNavigate();
 
-  // On mount: try to restore session from httpOnly refresh cookie
+  // On mount: try to restore session from httpOnly refresh cookie.
+  // ignored ref prevents the StrictMode double-invoke from sending two
+  // simultaneous refresh requests (which would rotate the token twice
+  // and leave the cookie holding a revoked token).
   useEffect(() => {
+    let ignored = false;
     const restore = async () => {
       const stored = localStorage.getItem(USER_KEY);
       if (!stored) { setLoading(false); return; }
       const token = await tryRefresh();
+      if (ignored) return;
       if (token) {
         setUser(JSON.parse(stored));
         setIsAuthenticated(true);
@@ -28,6 +33,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     restore();
+    return () => { ignored = true; };
   }, []);
 
   // Listen for session expiry triggered by api.js auto-refresh failure

@@ -52,7 +52,6 @@ ASGI_APPLICATION = 'config.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'OPTIONS': {'options': '-c search_path=public'},
         **_parse_db_url(config('DATABASE_URL')),
     }
 }
