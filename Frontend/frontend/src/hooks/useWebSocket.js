@@ -2,14 +2,14 @@ import { useEffect, useRef, useCallback } from 'react';
 import { getToken } from '../services/api';
 
 const WS_URL = 'ws://localhost:8000/ws/dashboard/';
-const RECONNECT_DELAY_MS = 3000;
 
 export function useWebSocket(onMessage) {
-  const wsRef       = useRef(null);
-  const timerRef    = useRef(null);
-  const mountedRef  = useRef(true);
-  const onMsgRef    = useRef(onMessage);
-  onMsgRef.current  = onMessage;
+  const wsRef      = useRef(null);
+  const timerRef   = useRef(null);
+  const mountedRef = useRef(true);
+  const onMsgRef   = useRef(onMessage);
+  const retryRef   = useRef(0);
+  onMsgRef.current = onMessage;
 
   const connect = useCallback(() => {
     const token = getToken();
@@ -18,6 +18,8 @@ export function useWebSocket(onMessage) {
     const url = `${WS_URL}?token=${token}`;
     const ws  = new WebSocket(url);
     wsRef.current = ws;
+
+    ws.onopen = () => { retryRef.current = 0; };
 
     ws.onmessage = (e) => {
       try {
@@ -28,10 +30,14 @@ export function useWebSocket(onMessage) {
 
     ws.onclose = () => {
       if (!mountedRef.current) return;
-      timerRef.current = setTimeout(connect, RECONNECT_DELAY_MS);
+      // Exponential back-off: 1s, 2s, 4s, 8s … capped at 30s
+      const delay = Math.min(1000 * 2 ** retryRef.current, 30000);
+      retryRef.current += 1;
+      timerRef.current = setTimeout(connect, delay);
     };
 
-    ws.onerror = () => ws.close();
+    // onerror is always followed by onclose — no need to call ws.close() here.
+    // Calling close() on a CONNECTING socket causes a browser warning.
   }, []);
 
   useEffect(() => {
@@ -40,7 +46,15 @@ export function useWebSocket(onMessage) {
     return () => {
       mountedRef.current = false;
       clearTimeout(timerRef.current);
-      wsRef.current?.close();
+      const ws = wsRef.current;
+      if (!ws) return;
+      if (ws.readyState === WebSocket.CONNECTING) {
+        // Don't close mid-handshake — wait for open then close silently.
+        ws.onopen  = () => ws.close();
+        ws.onclose = null;
+      } else {
+        ws.close();
+      }
     };
   }, [connect]);
 }

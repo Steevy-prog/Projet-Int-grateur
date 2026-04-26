@@ -12,8 +12,8 @@ import Logs       from './pages/logs';
 import Sidebar from './components/layout/sidebar';
 import Header  from './components/layout/header';
 
-import { AuthProvider  } from './context/AuthContext';
-import { AppProvider   } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AppProvider  } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 
 function AppLayout() {
@@ -38,16 +38,32 @@ function AppLayout() {
   );
 }
 
+function AppRoutes() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50">
+        <div className="h-10 w-10 border-[3px] border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/"   element={<Login />}     />
+      <Route path="/*"  element={<AppLayout />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <Router>
       <AuthProvider>
         <AppProvider>
           <ToastProvider>
-            <Routes>
-              <Route path="/"   element={<Login />}     />
-              <Route path="/*"  element={<AppLayout />} />
-            </Routes>
+            <AppRoutes />
           </ToastProvider>
         </AppProvider>
       </AuthProvider>
