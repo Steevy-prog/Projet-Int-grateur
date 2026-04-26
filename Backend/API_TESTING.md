@@ -9,6 +9,8 @@
 
 ### Start the stack
 
+docker run -d --name agrismart-redis -p 6379:6379 redis:7-alpine
+
 ```bash
 # 1 — Redis (Docker)
 docker start agrismart-redis       # or: docker run -d --name agrismart-redis -p 6379:6379 redis:7-alpine
