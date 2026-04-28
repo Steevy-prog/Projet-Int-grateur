@@ -46,26 +46,26 @@ export default function Logs() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-slate-800">Logs Système</h2>
-        <span className="text-sm text-slate-500">{filtered.length} entrée{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-sm text-white bg-black/70 px-3 py-1.5 rounded-lg shadow-sm font-medium">{filtered.length} entrée{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 bg-white border border-slate-200 rounded-xl p-4 shadow-sm items-center">
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Source</span>
+      <div className="flex flex-wrap gap-3 bg-black/70 border border-slate-200 rounded-xl p-4 shadow-sm items-center">
+        <span className="text-xs font-bold text-white uppercase tracking-wider">Source</span>
         {[['all', 'Toutes'], ['script', 'Script'], ['api', 'API']].map(([val, label]) => (
           <button key={val} type="button" onClick={() => setSourceFilter(val)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              sourceFilter === val ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+              sourceFilter === val ? 'bg-emerald-700 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-200'
             }`}>
             {label}
           </button>
         ))}
         <div className="w-px bg-slate-200 self-stretch" />
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Résultat</span>
+        <span className="text-xs font-bold text-white uppercase tracking-wider">Résultat</span>
         {[['all', 'Tous'], ['success', 'Succès'], ['failure', 'Échec']].map(([val, label]) => (
           <button key={val} type="button" onClick={() => setResultFilter(val)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              resultFilter === val ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              resultFilter === val ? 'bg-emerald-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}>
             {label}
           </button>
@@ -73,8 +73,8 @@ export default function Logs() {
       </div>
 
       {/* Log table */}
-      <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
-        <div className="bg-slate-900 px-6 py-3 flex items-center gap-2">
+      <div className="overflow-hidden border border-slate-200 rounded-xl bg-black/70 shadow-sm">
+        <div className="bg-slate-900 px-6 py-3 flex items-center justify-center gap-2">
           <Terminal size={14} className="text-emerald-400" />
           <span className="text-xs text-emerald-400 font-mono">AgriSmart — Journal d'activité système</span>
         </div>
@@ -84,7 +84,7 @@ export default function Logs() {
           </div>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+            <thead className="bg-slate-700 border-b border-white text-white uppercase text-[11px] font-bold tracking-wider">
               <tr>
                 <th className="px-6 py-3">Commande</th>
                 <th className="px-6 py-3">Résultat</th>
@@ -93,17 +93,17 @@ export default function Logs() {
                 <th className="px-6 py-3">Horodatage</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-white">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-slate-400 text-sm">Aucun log correspondant</td>
+                  <td colSpan={5} className="px-6 py-10 text-center text-white text-sm">Aucun log correspondant</td>
                 </tr>
               ) : filtered.map(log => (
-                <tr key={log.id} className="hover:bg-slate-50">
+                <tr key={log.id} className="hover:bg-slate-800">
                   <td className="px-6 py-4">
-                    <div className="font-mono text-xs text-slate-700">{log.command}</div>
+                    <div className="font-mono text-xs text-white">{log.command}</div>
                     {log.script_name && (
-                      <div className="font-mono text-[10px] text-slate-400 mt-0.5">{log.script_name}</div>
+                      <div className="font-mono text-[10px] text-white/70 mt-0.5">{log.script_name}</div>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -124,8 +124,8 @@ export default function Logs() {
                       {(log.source || '').toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-500 text-xs font-mono">{log.executed_by_username || '—'}</td>
-                  <td className="px-6 py-4 text-slate-400 text-xs font-mono">{formatDate(log.executed_at)}</td>
+                  <td className="px-6 py-4 text-white text-xs font-mono">{log.executed_by_username || '—'}</td>
+                  <td className="px-6 py-4 text-white text-xs font-mono">{formatDate(log.executed_at)}</td>
                 </tr>
               ))}
             </tbody>

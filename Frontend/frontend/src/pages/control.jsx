@@ -112,38 +112,38 @@ export default function Control() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-800">Contrôle & Seuils</h2>
-        <p className="text-sm text-slate-400 mt-0.5">Contrôle manuel des actionneurs et configuration des seuils</p>
+        <h2 className="text-xl font-bold text-slate-900">Contrôle & Seuils</h2>
+        <p className="text-xs font-semibold text-slate-600 mt-0.5">Contrôle manuel des actionneurs et configuration des seuils</p>
       </div>
 
       {/* Actuators */}
       <Card title="Actionneurs — Contrôle Manuel" icon={Zap}>
         {actuators.length === 0 ? (
-          <p className="text-sm text-slate-400">Aucun actionneur configuré.</p>
+          <p className="text-sm text-white">Aucun actionneur configuré.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {actuators.map(a => (
               <div key={a.id} className={`rounded-xl border p-4 transition-all ${
-                a.status === 'on' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'
+                a.status === 'on' ? 'border-emerald-200 bg-emerald-900' : 'border-slate-200 bg-slate-700'
               }`}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{a.name}</p>
-                    <p className="text-xs text-slate-400">{a.type}</p>
+                    <p className="text-sm font-semibold text-slate-50">{a.name}</p>
+                    <p className="text-xs text-slate-50/80">{a.type}</p>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    a.status === 'on' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'
+                    a.status === 'on' ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-500'
                   }`}>
                     {a.status}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mb-3">Dernier déclenchement: {formatTime(a.last_triggered_at)}</p>
+                <p className="text-[11px] text-slate-300 mb-3">Dernier déclenchement: {formatTime(a.last_triggered_at)}</p>
                 <button type="button"
                   disabled={toggling === a.id}
                   onClick={() => toggleActuator(a)}
                   className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:opacity-60 ${
                     a.status === 'on'
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200'
+                      ? 'bg-emerald-50 text-emerald-800  hover:bg-emerald-100 hover:text-emerald-900 shadow-sm shadow-emerald-200'
                       : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100'
                   }`}
                 >
@@ -162,24 +162,24 @@ export default function Control() {
       {/* Thresholds */}
       <Card title="Seuils d'Automatisation" icon={Settings2}>
         {thresholds.length === 0 ? (
-          <p className="text-sm text-slate-400">Aucun seuil configuré.</p>
+          <p className="text-sm text-slate-50">Aucun seuil configuré.</p>
         ) : (
           <form onSubmit={handleSave}>
             <div className="grid grid-cols-[1fr_120px_120px_60px] gap-3 px-1 mb-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Capteur</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Min</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Max</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Unité</span>
+              <span className="text-[11px] font-bold text-slate-50 uppercase tracking-wider">Capteur</span>
+              <span className="text-[11px] font-bold text-slate-50 uppercase tracking-wider text-center">Min</span>
+              <span className="text-[11px] font-bold text-slate-50 uppercase tracking-wider text-center">Max</span>
+              <span className="text-[11px] font-bold text-slate-50 uppercase tracking-wider text-center">Unité</span>
             </div>
             <div className="space-y-2">
               {thresholds.map(t => (
-                <div key={t.key} className="grid grid-cols-[1fr_120px_120px_60px] gap-3 items-center bg-slate-50 rounded-lg px-3 py-3">
-                  <span className="text-sm font-medium text-slate-700">{t.label}</span>
+                <div key={t.key} className="grid grid-cols-[1fr_120px_120px_60px] gap-3 items-center border-t-2 border-white bg-slate-800 rounded-lg px-3 py-3">
+                  <span className="text-sm font-medium text-slate-50">{t.label}</span>
                   <input type="number" value={t.min} onChange={e => updateThreshold(t.key, 'min', e.target.value)}
                     className="w-full border border-slate-200 bg-white rounded-lg px-3 py-1.5 text-sm text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" />
                   <input type="number" value={t.max} onChange={e => updateThreshold(t.key, 'max', e.target.value)}
                     className="w-full border border-slate-200 bg-white rounded-lg px-3 py-1.5 text-sm text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" />
-                  <span className="text-xs text-slate-400 text-center font-mono">{t.unit}</span>
+                  <span className="text-xs text-slate-200 text-center font-mono">{t.unit}</span>
                 </div>
               ))}
             </div>
@@ -193,7 +193,7 @@ export default function Control() {
                 Enregistrer
               </button>
               <button type="button" onClick={handleReset}
-                className="flex items-center gap-2 px-5 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+                className="flex items-center gap-2 px-5 py-2 bg-slate-50 border border-slate-300 text-slate-800 rounded-lg text-sm font-medium hover:bg-white/80 transition-colors">
                 <RotateCcw size={14} />
                 Réinitialiser
               </button>

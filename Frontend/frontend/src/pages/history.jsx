@@ -110,21 +110,24 @@ export default function History() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-slate-800">Historique & Exports</h2>
         <button type="button" onClick={handleExport} disabled={exporting}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium disabled:opacity-60">
+          className="flex items-center gap-2 px-4 py-2 bg-black/60 text-white rounded-lg hover:bg-black/90 transition-colors shadow-sm text-sm font-medium disabled:opacity-60">
           {exporting
-            ? <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            : <Download size={16} />
+            ? <span className="h-4 w-4 text-green-400 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : 
+              <span className='text-green-400'>
+                <Download size={16} />
+              </span>
           }
           Exporter CSV
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-black/70  rounded-lg p-1 w-fit">
         {TABS.map(tab => (
           <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.id ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              activeTab === tab.id ? 'bg-black/70 text-emerald-500 shadow-sm' : 'text-slate-50 hover:text-slate-400'
             }`}>
             <tab.icon size={14} />
             {tab.label}
@@ -139,9 +142,9 @@ export default function History() {
       ) : (
         <>
           {activeTab === 'actions' && (
-            <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+            <div className="overflow-hidden border border-slate-200 rounded-xl bg-black/70 backdrop-blur-sm shadow-sm">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                <thead className="bg-slate-700 text-slate-50 uppercase text-[11px] font-bold tracking-wider">
                   <tr>
                     <th className="px-6 py-3">Actionneur</th>
                     <th className="px-6 py-3">Action</th>
@@ -151,20 +154,20 @@ export default function History() {
                     <th className="px-6 py-3">Horodatage</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-white">
                   {actions.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">
+                      <td colSpan={6} className="px-6 py-10 text-center text-white text-sm">
                         Aucune action enregistrée
                       </td>
                     </tr>
                   ) : actions.map(a => {
                     const src = SOURCE_LABELS[a.source] || { label: a.source, cls: 'bg-slate-100 text-slate-600' };
                     return (
-                      <tr key={a.id} className="hover:bg-slate-50">
+                      <tr key={a.id} className="hover:bg-slate-700">
                         <td className="px-6 py-4">
-                          <p className="font-semibold text-slate-700 text-xs">{a.actuator_name}</p>
-                          <p className="text-[10px] text-slate-400">{a.actuator_type}</p>
+                          <p className="font-semibold text-white text-xs">{a.actuator_name}</p>
+                          <p className="text-[10px] text-white/50">{a.actuator_type}</p>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -180,13 +183,13 @@ export default function History() {
                             {src.label}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 text-xs font-mono">
+                        <td className="px-6 py-4 text-white text-xs font-mono">
                           {a.triggered_by_username || '—'}
                         </td>
-                        <td className="px-6 py-4 text-slate-400 text-xs max-w-[140px] truncate">
+                        <td className="px-6 py-4 text-white text-xs max-w-[140px] truncate">
                           {a.notes || '—'}
                         </td>
-                        <td className="px-6 py-4 text-slate-400 text-xs">{formatDate(a.triggered_at)}</td>
+                        <td className="px-6 py-4 text-white text-xs">{formatDate(a.triggered_at)}</td>
                       </tr>
                     );
                   })}

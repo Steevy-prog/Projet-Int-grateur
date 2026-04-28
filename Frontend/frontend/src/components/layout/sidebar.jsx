@@ -3,6 +3,8 @@ import { useApp  } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+import logo from '../../assets/logo_3.png';
+
 const NAV_MAIN = [
   { icon: LayoutDashboard, label: 'Tableau de bord',    page: 'dashboard'  },
   { icon: Activity,        label: 'Surveillance',       page: 'monitoring' },
@@ -20,10 +22,10 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all mb-0.5 text-left ${
+    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all mb-0.5 text-left cursor-pointer ${
       active
         ? 'bg-emerald-50 text-emerald-700 font-semibold border-l-2 border-emerald-600 pl-[10px]'
-        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+        : 'text-slate-700 hover:bg-slate-100 hover:text-slate-700'
     }`}
   >
     <Icon size={17} className="shrink-0" />
@@ -42,12 +44,16 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-60 border-r border-slate-200 bg-white sticky top-0 h-screen hidden md:flex flex-col p-4 shrink-0">
+    <aside 
+      style={{ backgroundColor: '#E3E3D6' }}
+      className="w-60 border-r border-slate-200 bg-white sticky top-0 h-screen hidden md:flex flex-col p-4 shrink-0">
 
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-1 mb-8">
-        <div className="bg-emerald-600 p-1.5 rounded-lg text-white shrink-0">
-          <Leaf size={18} />
+        <div 
+          style ={{ backgroundImage: `url(${logo})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+          className="p-10 rounded-full text-white shrink-0">
+          
         </div>
         <div>
           <span className="font-bold text-slate-800 tracking-tight">AgriSmart</span>
@@ -89,8 +95,8 @@ export default function Sidebar() {
       </nav>
 
       {/* User + Logout */}
-      <div className="border-t border-slate-100 pt-4 mt-4">
-        <div className="flex items-center gap-2.5 px-3 mb-3">
+      <div className="border-t border-slate-500 pt-4 mt-4">
+        {/* <div className="flex items-center gap-2.5 px-3 mb-3">
           <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xs font-bold shrink-0">
             {user?.username
               ? user.username.split('_').map(w => w[0].toUpperCase()).join('').slice(0, 2)
@@ -102,11 +108,11 @@ export default function Sidebar() {
             </p>
             <p className="text-[10px] text-slate-400 capitalize">{user?.role || '—'}</p>
           </div>
-        </div>
+        </div> */}
         <button
           type="button"
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm"
+          className="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm cursor-pointer"
         >
           <LogOut size={16} />
           Déconnexion

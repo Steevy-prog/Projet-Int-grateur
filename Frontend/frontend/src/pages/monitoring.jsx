@@ -132,14 +132,16 @@ export default function Monitoring() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Surveillance des Capteurs</h2>
-          <p className="text-sm text-slate-400 mt-0.5">Analyses et historique des relevés</p>
+          <h2 className="text-xl font-bold text-slate-900">Surveillance des Capteurs</h2>
+          <p className="text-xs font-semibold text-slate-600 mt-0.5">Analyses et historique des relevés</p>
         </div>
         <button type="button" onClick={handleExport} disabled={exporting}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium self-start sm:self-auto disabled:opacity-60">
+          className="flex items-center gap-2 px-4 py-2 bg-black/70 text-white rounded-lg hover:bg-black transition-colors shadow-sm text-sm font-medium self-start sm:self-auto disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed">
           {exporting
-            ? <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            : <Download size={15} />
+            ? <span className="h-4 w-4 border-2 text-emerald-400 rounded-full animate-spin" />
+            : <span className="h-4 w-4 text-emerald-400">
+                <Download size={15} />
+              </span>
           }
           Exporter les données
         </button>
@@ -147,18 +149,18 @@ export default function Monitoring() {
 
       {/* Summary pills */}
       <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm">
+        <div className="flex items-center gap-2 bg-black/60 border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span className="text-slate-600 font-medium">{activeSensors} actif{activeSensors !== 1 ? 's' : ''}</span>
+          <span className="text-white font-medium">{activeSensors} actif{activeSensors !== 1 ? 's' : ''}</span>
         </div>
         {inactiveSensors > 0 && (
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm">
+          <div className="flex items-center gap-2 bg-black/60 border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm">
             <span className="h-2 w-2 rounded-full bg-slate-400" />
-            <span className="text-slate-600 font-medium">{inactiveSensors} inactif{inactiveSensors !== 1 ? 's' : ''}</span>
+            <span className="text-white font-medium">{inactiveSensors} inactif{inactiveSensors !== 1 ? 's' : ''}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm">
-          <span className="text-slate-600 font-medium">{sensors.length} capteurs total</span>
+        <div className="flex items-center gap-2 bg-black/60 border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm">
+          <span className="text-white font-medium">{sensors.length} capteurs total</span>
         </div>
       </div>
 
@@ -186,15 +188,17 @@ export default function Monitoring() {
       )}
 
       {/* Sensor table */}
-      <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-700 text-sm">État des capteurs</h3>
+      <div 
+        // style={{ backgroundColor: '#E3E3D6' }}
+        className="overflow-hidden bg-black/60 border border-slate-200 rounded-xl shadow-sm">
+        <div className="px-5 py-4 bg-slate-800 border-b border-slate-100">
+          <h3 className="font-semibold text-white text-center text-sm uppercase">État des capteurs</h3>
         </div>
         {sensors.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-slate-400 text-center">Aucun capteur configuré.</p>
+          <p className="px-5 py-8 text-sm text-white text-center">Aucun capteur configuré.</p>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+            <thead className="text-white text-[12px] bg-black/60 font-bold uppercase tracking-wider border-b border-slate-100">
               <tr>
                 <th className="px-5 py-3">Capteur</th>
                 <th className="px-5 py-3">Statut</th>
@@ -210,27 +214,27 @@ export default function Monitoring() {
                   <tr key={sensor.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 rounded-lg bg-slate-100">
+                        <div className="p-1.5 rounded-lg bg-black">
                           {Icon && <Icon size={14} style={{ color: meta.color }} />}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-700">{sensor.name}</p>
-                          <p className="text-[11px] text-slate-400 font-mono">{meta.model || sensor.type}</p>
+                          <p className="font-semibold text-slate-50">{sensor.name}</p>
+                          <p className="text-[11px] text-slate-50/80 font-mono">{meta.model || sensor.type}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${sensor.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                        <span className={`text-xs font-semibold ${sensor.is_active ? 'text-emerald-700' : 'text-slate-500'}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${sensor.is_active ? 'bg-emerald-400' : 'bg-red-500'}`} />
+                        <span className={`text-xs font-semibold ${sensor.is_active ? 'text-emerald-400' : 'text-red-500'}`}>
                           {sensor.is_active ? 'Actif' : 'Inactif'}
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-700">
+                    <td className="px-5 py-3.5 font-semibold text-slate-50">
                       {formatValue(sensor.latest_value, sensor.unit)}
                     </td>
-                    <td className="px-5 py-3.5 text-slate-400 text-xs">{formatLastSeen(sensor.latest_read_at)}</td>
+                    <td className="px-5 py-3.5 text-slate-50 text-xs">{formatLastSeen(sensor.latest_read_at)}</td>
                   </tr>
                 );
               })}

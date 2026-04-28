@@ -73,11 +73,13 @@ export default function Admin() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Gestion des Utilisateurs</h2>
-          <p className="text-sm text-slate-400 mt-0.5">{users.length} compte{users.length !== 1 ? 's' : ''} enregistré{users.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-slate-600 mt-0.5">{users.length} compte{users.length !== 1 ? 's' : ''} enregistré{users.length !== 1 ? 's' : ''}</p>
         </div>
         <button type="button" onClick={() => setCreateUserModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm self-start sm:self-auto">
-          <Plus size={15} />
+          className="flex items-center gap-2 px-4 py-2 bg-black/70 text-white rounded-lg text-sm font-semibold hover:bg-black/90 transition-colors shadow-sm self-start sm:self-auto">
+          <span className="text-green-400">
+            <Plus size={15} />
+          </span>
           Nouvel utilisateur
         </button>
       </div>
@@ -85,31 +87,31 @@ export default function Admin() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Actifs',  value: activeCount, color: 'text-emerald-600' },
-          { label: 'Admins',  value: adminCount,  color: 'text-purple-600'  },
-          { label: 'Viewers', value: viewerCount, color: 'text-blue-600'    },
+          { label: 'Actifs',  value: activeCount, color: 'text-emerald-400' },
+          { label: 'Admins',  value: adminCount,  color: 'text-purple-400'  },
+          { label: 'Viewers', value: viewerCount, color: 'text-blue-400'    },
         ].map(s => (
-          <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm text-center">
+          <div key={s.label} className="bg-black/70 backdrop-blur-sm border border-slate-200 rounded-xl p-4 shadow-sm text-center">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <p className="text-xs text-slate-50 mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-700 text-sm">Comptes utilisateurs</h3>
+      <div className="overflow-hidden border border-slate-200 rounded-xl bg-black/70 backdrop-blur-sm shadow-sm">
+        <div className="px-5 py-4 bg-slate-700 border-b border-slate-100">
+          <h3 className="font-semibold text-white text-center text-sm">Comptes utilisateurs</h3>
         </div>
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <div className="h-6 w-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : users.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-slate-400 text-center">Aucun utilisateur.</p>
+          <p className="px-5 py-8 text-sm white text-center">Aucun utilisateur.</p>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+            <thead className="text-slate-50 border-b border-white text-[11px] font-bold uppercase tracking-wider">
               <tr>
                 <th className="px-5 py-3">Utilisateur</th>
                 <th className="px-5 py-3">Rôle</th>
@@ -117,21 +119,21 @@ export default function Admin() {
                 <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-white">
               {users.map(u => {
                 const roleStyle = ROLE_STYLES[u.role] || ROLE_STYLES.viewer;
                 const RoleIcon  = roleStyle.icon;
                 const isSelf    = u.id === user?.id;
                 return (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={u.id} className="hover:bg-slate-800 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-xs font-bold shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center text-slate-600 text-xs font-bold shrink-0">
                           {u.username.split('_').map(w => w[0]?.toUpperCase()).join('').slice(0, 2)}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-800">{u.username}</p>
-                          <p className="text-[11px] text-slate-400">{u.email}</p>
+                          <p className="font-semibold text-white">{u.username}</p>
+                          <p className="text-[11px] text-white/50">{u.email}</p>
                         </div>
                       </div>
                     </td>
@@ -143,8 +145,8 @@ export default function Admin() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                        <span className={`text-xs font-medium ${u.is_active ? 'text-emerald-700' : 'text-slate-500'}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-white'}`} />
+                        <span className={`text-xs font-medium ${u.is_active ? 'text-emerald-400' : 'text-white'}`}>
                           {u.is_active ? 'Actif' : 'Inactif'}
                         </span>
                       </div>
@@ -153,7 +155,7 @@ export default function Admin() {
                       <div className="flex items-center justify-end gap-2">
                         <button type="button"
                           onClick={() => setEditingUser(u)}
-                          className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          className="p-1.5 text-white hover:text-emerald-400 rounded-lg transition-colors cursor-pointer"
                           title="Modifier">
                           <Pencil size={13} />
                         </button>
@@ -161,10 +163,10 @@ export default function Admin() {
                           disabled={isSelf || togglingId === u.id}
                           onClick={() => toggleActive(u)}
                           title={isSelf ? 'Impossible de modifier son propre compte' : u.is_active ? 'Désactiver' : 'Activer'}
-                          className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
+                          className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 cursor-pointer ${
                             u.is_active
-                              ? 'text-slate-400 hover:text-red-600 hover:bg-red-50'
-                              : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                              ? 'text-white hover:text-red-400'
+                              : 'text-white hover:text-emerald-400'
                           }`}
                         >
                           {togglingId === u.id

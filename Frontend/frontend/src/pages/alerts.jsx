@@ -95,32 +95,32 @@ export default function Alerts() {
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-slate-800">Historique des Alertes</h2>
           {pendingCount > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
               {pendingCount} non acquittée{pendingCount > 1 ? 's' : ''}
             </span>
           )}
         </div>
-        <span className="text-sm text-slate-500">{filtered.length} alerte{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-sm bg-black/60 text-white px-3 py-1.5 rounded-lg shadow-sm font-medium">{filtered.length} alerte{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 bg-white border border-slate-200 rounded-xl p-4 shadow-sm items-center">
-        <Filter size={14} className="text-slate-400" />
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sévérité</span>
+      <div className="flex flex-wrap gap-3 bg-black/60 border border-slate-200 rounded-xl p-4 shadow-sm items-center">
+        <Filter size={14} className="text-slate-50" />
+        <span className="text-xs font-bold text-slate-50 uppercase tracking-wider">Sévérité</span>
         {[['all', 'Toutes'], ['high', 'Élevée'], ['medium', 'Moyenne'], ['low', 'Faible']].map(([val, label]) => (
           <button key={val} onClick={() => setSeverityFilter(val)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              severityFilter === val ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              severityFilter === val ? 'bg-emerald-700 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-200 cursor-pointer'
             }`}>
             {label}
           </button>
         ))}
         <div className="w-px bg-slate-200 self-stretch" />
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Statut</span>
+        <span className="text-xs font-bold text-slate-50 uppercase tracking-wider">Statut</span>
         {[['all', 'Tous'], ['pending', 'En attente'], ['acknowledged', 'Acquittées']].map(([val, label]) => (
           <button key={val} onClick={() => setStatusFilter(val)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              statusFilter === val ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              statusFilter === val ? 'bg-emerald-700 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-200 cursor-pointer'
             }`}>
             {label}
           </button>
@@ -128,14 +128,14 @@ export default function Alerts() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm">
+      <div className="overflow-hidden border border-slate-200 rounded-xl bg-black/70 backdrop-blur-xs shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <div className="h-6 w-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+            <thead className="bg-slate-700 text-white uppercase text-[11px] font-bold tracking-wider">
               <tr>
                 <th className="px-6 py-3">Type</th>
                 <th className="px-6 py-3">Sévérité</th>
@@ -145,14 +145,14 @@ export default function Alerts() {
                 <th className="px-6 py-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-white">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">Aucune alerte correspondante</td>
+                  <td colSpan={6} className="px-6 py-10 text-center text-white text-sm">Aucune alerte correspondante</td>
                 </tr>
               ) : filtered.map(alert => (
                 <tr key={alert.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 font-medium text-slate-700 whitespace-nowrap">
+                  <td className="px-6 py-4 text-white whitespace-nowrap">
                     {ALERT_TYPE_LABELS[alert.type] || alert.type}
                   </td>
                   <td className="px-6 py-4">
@@ -160,11 +160,11 @@ export default function Alerts() {
                       {alert.severity}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600 max-w-xs">{alert.message}</td>
-                  <td className="px-6 py-4 text-slate-500 whitespace-nowrap text-xs">
+                  <td className="px-6 py-4 text-white max-w-xs">{alert.message}</td>
+                  <td className="px-6 py-4 text-white whitespace-nowrap text-xs">
                     {alert.sensor_name || alert.actuator_name || '—'}
                   </td>
-                  <td className="px-6 py-4 text-slate-400 whitespace-nowrap text-xs">{formatDate(alert.triggered_at)}</td>
+                  <td className="px-6 py-4 text-white whitespace-nowrap text-xs">{formatDate(alert.triggered_at)}</td>
                   <td className="px-6 py-4 text-right">
                     {alert.is_acknowledged ? (
                       <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">

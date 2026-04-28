@@ -49,8 +49,8 @@ export default function Header() {
 
   return (
     <header 
-      style={{ backgroundImage: `url(${card_2})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-      className="h-14 border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-5 lg:px-8 shrink-0">
+      // style={{ backgroundImage: `url(${card_2})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      className="h-14 bg-black/70 sticky top-0 z-20 flex items-center justify-between px-5 lg:px-8 shrink-0">
 
       {/* Left — user info */}
       <div className="flex items-center gap-3">
