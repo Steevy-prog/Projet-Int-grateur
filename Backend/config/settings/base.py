@@ -53,6 +53,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         **_parse_db_url(config('DATABASE_URL')),
+        'CONN_MAX_AGE': 60,
     }
 }
 

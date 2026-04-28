@@ -67,13 +67,13 @@ function SensorCard({ sensor, history }) {
   const value = sensor.latest_value != null ? parseFloat(sensor.latest_value).toLocaleString('fr-FR') : '—';
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+    <div className="bg-black/60 backdrop-blur-sm border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg" style={{ backgroundColor: (color || '#888') + '18' }}>
+          <div className="p-1.5 rounded-lg" style={{ backgroundColor: ('#000000') || color+ '18' }}>
             {Icon && <Icon size={15} style={{ color }} />}
           </div>
-          <span className="text-xs font-semibold text-slate-500">{label || sensor.name}</span>
+          <span className="text-xs font-semibold text-slate-50">{label || sensor.name}</span>
         </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[status]}`}>
           {statusLabel}
@@ -81,8 +81,8 @@ function SensorCard({ sensor, history }) {
       </div>
       <div className="flex items-end justify-between">
         <div>
-          <span className="text-2xl font-bold text-slate-800">{value}</span>
-          <span className="text-sm text-slate-400 ml-1">{unit || sensor.unit}</span>
+          <span className="text-2xl font-bold text-white">{value}</span>
+          <span className="text-sm text-white/60 ml-1">{unit || sensor.unit}</span>
         </div>
         <div className="flex items-center gap-1 text-[11px] text-slate-500">
           <TrendIcon trend="stable" />
@@ -223,8 +223,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-800">Tableau de bord</h2>
-        <p className="text-sm text-slate-400 mt-0.5">Aperçu en temps réel de la serre</p>
+        <h2 className="text-xl font-bold text-slate-900">Tableau de bord</h2>
+        <p className="text-xs font-semibold text-slate-600 mt-0.5">Aperçu en temps réel de la serre</p>
       </div>
 
       {/* Sensor KPI cards */}
@@ -328,7 +328,7 @@ export default function Dashboard() {
                       <p className={`text-sm font-semibold ${s.txt}`}>{alert.message}</p>
                       <p className={`text-xs mt-0.5 ${s.sub}`}>{alert.sensor_name || alert.actuator_name || ''}</p>
                     </div>
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap">{formatTime(alert.triggered_at)}</span>
+                    <span className="text-[10px] text-slate-700 font-bold whitespace-nowrap">{formatTime(alert.triggered_at)}</span>
                   </div>
                 );
               })}
@@ -342,13 +342,13 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {actuators.map(a => (
-                <div key={a.id} className="flex items-center justify-between">
+                <div key={a.id} className={`flex items-center justify-between ${a.status === 'on' ? 'bg-emerald-900' : 'bg-slate-700'} border-t-2 border-white rounded-lg px-3 py-2`}>
                   <div>
-                    <p className="text-xs font-semibold text-slate-700">{a.name}</p>
-                    <p className="text-[10px] text-slate-400">{a.type}</p>
+                    <p className="text-sm font-semibold text-white">{a.name}</p>
+                    <p className="text-[10px] text-white/70">{a.type}</p>
                   </div>
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    a.status === 'on' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                    a.status === 'on' ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-500'
                   }`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${a.status === 'on' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                     {a.status}

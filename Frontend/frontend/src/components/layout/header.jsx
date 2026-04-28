@@ -4,6 +4,8 @@ import { useApp  } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+import card_2 from '../../assets/card-1.jpg';
+
 const MOCK_NOTIFICATIONS = [
   { id: 1, text: 'Humidité du sol sous le seuil (18%)', time: 'Il y a 2 min', unread: true  },
   { id: 2, text: 'Température dépasse 29 °C',           time: 'Il y a 12 min', unread: true  },
@@ -46,7 +48,9 @@ export default function Header() {
   });
 
   return (
-    <header className="h-14 border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between px-5 lg:px-8 shrink-0">
+    <header 
+      // style={{ backgroundImage: `url(${card_2})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      className="h-14 bg-black/70 sticky top-0 z-20 flex items-center justify-between px-5 lg:px-8 shrink-0">
 
       {/* Left — user info */}
       <div className="flex items-center gap-3">
@@ -55,14 +59,14 @@ export default function Header() {
         </div>
         <div className="">
           <div>
-            <p className="text-xs font-semibold text-slate-800 leading-none">{displayName}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5 capitalize">{user?.role || '—'}</p>
+            <p className="text-xs font-semibold text-white leading-none">{displayName}</p>
+            <p className="text-[10px] text-white/70 mt-0.5 capitalize">{user?.role || '—'}</p>
           </div>
         </div>
       </div>
 
       {/* Center — connection status + date */}
-      <div className="hidden md:flex items-center gap-3 text-xs text-slate-500">
+      <div className="hidden md:flex items-center gap-3 text-xs text-white">
         <div className="flex items-center gap-1.5">
           {isLive ? (
             <>
@@ -70,16 +74,16 @@ export default function Header() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-emerald-600 font-medium">Connecté en direct</span>
+              <span className="text-emerald-400 font-medium">Connecté en direct</span>
             </>
           ) : (
             <>
               <span className="h-2 w-2 rounded-full bg-red-500" />
-              <span className="text-red-500 font-medium">Déconnecté</span>
+              <span className="text-red-400 font-medium">Déconnecté</span>
             </>
           )}
         </div>
-        <span className="text-slate-300">|</span>
+        <span className="text-slate-500">|</span>
         <span>{currentDate}</span>
       </div>
 
@@ -90,9 +94,9 @@ export default function Header() {
             <>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-300" />
               </span>
-              <span className="text-emerald-600 font-medium">En direct</span>
+              <span className="text-emerald-400 font-medium">En direct</span>
             </>
           ) : (
             <>
@@ -111,7 +115,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setNotifOpen(v => !v)}
-            className="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            className="relative p-2 rounded-lg text-white hover:text-slate-400 transition-colors cursor-pointer"
           >
             <Bell size={17} />
             {unreadCount > 0 && (
@@ -160,7 +164,7 @@ export default function Header() {
         <button
           type="button"
           onClick={() => setMobileOpen(v => !v)}
-          className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+          className="md:hidden p-2 rounded-lg text-white hover:text-slate-400 transition-colors cursor-pointer"
         >
           {mobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
